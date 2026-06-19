@@ -2,12 +2,9 @@ import asyncio
 import os
 from typing import Dict, Set
 
-from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, WebSocket
 from fastapi.concurrency import asynccontextmanager
 import websockets
-
-load_dotenv()
 
 chat_router = APIRouter()
 

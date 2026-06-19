@@ -1,9 +1,6 @@
 import os
 
-from dotenv import load_dotenv
 from authlib.integrations.starlette_client import OAuth
-
-load_dotenv()
 
 client_id = os.getenv("TWITCH_CLIENT_ID")
 client_secret = os.getenv("TWITCH_CLIENT_SECRET")
