@@ -1,5 +1,6 @@
 from fastapi import Request
-from .service import AuthService
+
+from modules.auth.service.service import AuthService
 
 
 class AuthController:
