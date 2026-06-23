@@ -7,13 +7,13 @@ from .service.service import AuthService
 from .controller import AuthController
 from .domain.exceptions import OAuthException
 
-auth_router = APIRouter(prefix="/auth")
-
-redirect_url = os.getenv("REDIRECT_URL")
+redirect_url = os.getenv("TWITCH_REDIRECT_URL")
 
 twitch_client = TwitchClient()
 auth_service = AuthService(twitch_client=twitch_client, redirect_url=redirect_url)
 auth_controller = AuthController(service=auth_service)
+
+auth_router = APIRouter(prefix="/auth")
 
 
 @auth_router.get("/login")

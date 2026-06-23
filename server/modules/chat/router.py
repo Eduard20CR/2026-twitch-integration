@@ -8,7 +8,7 @@ import websockets
 
 chat_router = APIRouter()
 
-ws_url = os.getenv("WS_URL")
+ws_url = os.getenv("TWITCH_WS_URL")
 
 connection = None
 

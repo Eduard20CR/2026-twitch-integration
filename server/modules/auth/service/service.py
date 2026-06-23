@@ -16,6 +16,9 @@ class AuthService:
     async def handle_callback(self, request: Request):
         try:
             token = await self.twitch_client.exchange_code_for_token(request)
+
+            # LOGICA DE AUTENTICACION Y CREACION DE USUARIO EN LA BASE DE DATOS
+
             return token
 
         except TwitchAuthenticationError as e:
