@@ -2,6 +2,8 @@ from fastapi import Request
 
 from modules.auth.domain.exceptions import OAuthException, TwitchAuthenticationError
 from modules.auth.infrastructure.twitch_client import TwitchClient
+from modules.auth.domain.commands import CreateUserCommand
+from common.db.uow import UnitOfWork
 
 
 class AuthService:
@@ -17,7 +19,14 @@ class AuthService:
         try:
             token = await self.twitch_client.exchange_code_for_token(request)
 
-            # LOGICA DE AUTENTICACION Y CREACION DE USUARIO EN LA BASE DE DATOS
+            with UnitOfWork() as uow:
+                # create_user_command = CreateUserCommand(
+                # username=token["userinfo"]["preferred_username"],
+                # email=token["userinfo"]["email"],
+                # sub=token["userinfo"]["sub"],
+                # provider=token["userinfo"]["iss"],
+                # )
+                pass
 
             return token
 

@@ -1,11 +1,9 @@
-# Code above omitted 👆
-
 import os
 
 from dotenv import load_dotenv
 from sqlmodel import SQLModel, create_engine
 
-from modules.auth.models.model import Session, User
+from modules.auth.models.users_model import Session, User
 
 load_dotenv()
 
