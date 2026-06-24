@@ -23,9 +23,11 @@ class AuthService:
             sub = token["userinfo"]["sub"]
             username = token["userinfo"]["preferred_username"]
             provider = token["userinfo"]["iss"]
-            email = await self.twitch_client.get_user_email(sub, access_token)
-
-            print(email)
+            twitch_user_info = (
+                await self.twitch_client.get_user_email_and_profile_picture(
+                    sub, access_token
+                )
+            )
 
             # with UnitOfWork() as uow:
             # create_user_command = CreateUserCommand(

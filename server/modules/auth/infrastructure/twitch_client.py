@@ -29,7 +29,7 @@ class TwitchClient:
         except Exception as e:
             raise TwitchAuthenticationError() from e
 
-    async def get_user_email(
+    async def get_user_email_and_profile_picture(
         self, user_sub: str, access_token: str
     ) -> TwitchUserInformation:
 
