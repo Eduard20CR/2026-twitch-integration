@@ -19,14 +19,22 @@ class AuthService:
         try:
             token = await self.twitch_client.exchange_code_for_token(request)
 
-            with UnitOfWork() as uow:
-                # create_user_command = CreateUserCommand(
-                # username=token["userinfo"]["preferred_username"],
-                # email=token["userinfo"]["email"],
-                # sub=token["userinfo"]["sub"],
-                # provider=token["userinfo"]["iss"],
-                # )
-                pass
+            access_token = token["access_token"]
+            sub = token["userinfo"]["sub"]
+            username = token["userinfo"]["preferred_username"]
+            provider = token["userinfo"]["iss"]
+            email = await self.twitch_client.get_user_email(sub, access_token)
+
+            print(email)
+
+            # with UnitOfWork() as uow:
+            # create_user_command = CreateUserCommand(
+            # username=token["userinfo"]["preferred_username"],
+            # email=token["userinfo"]["email"],
+            # sub=token["userinfo"]["sub"],
+            # provider=token["userinfo"]["iss"],
+            # )
+            # pass
 
             return token
 

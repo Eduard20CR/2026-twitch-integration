@@ -9,3 +9,4 @@ class User(SQLModel, table=True):
     email: str
     sub: str = Field(index=True)
     provider: str
+    profile_image_url: str
