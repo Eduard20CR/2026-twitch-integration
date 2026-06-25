@@ -1,4 +1,4 @@
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from modules.auth.domain.commands import CreateUserCommand
 from modules.auth.models.users_model import User
@@ -13,7 +13,9 @@ class UsersRepository:
         pass
 
     def get_by_twitch_id(self, twitch_id):
-        pass
+        statement = select(User)
+        self.db_session.exec(statement)
+        # self.db_session.exec
 
     def create(self, create_user_command: CreateUserCommand):
         user = User(
@@ -21,5 +23,7 @@ class UsersRepository:
             email=create_user_command.email,
             sub=create_user_command.sub,
             provider=create_user_command.provider,
+            profile_image_url=create_user_command.profile_image_url,
         )
+
         self.db_session.add(user)

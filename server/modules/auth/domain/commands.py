@@ -6,3 +6,4 @@ class CreateUserCommand(BaseModel):
     email: str
     sub: str
     provider: str
+    profile_image_url: str
