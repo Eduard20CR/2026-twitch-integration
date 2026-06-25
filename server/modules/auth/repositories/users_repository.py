@@ -9,15 +9,17 @@ class UsersRepository:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    def get_by_id(self, user_id):
-        pass
+    async def get_by_id(self, user_id):
+        statement = select(User).where(User.id == user_id)
+        result = await self.db_session.exec(statement)
+        return result.first()
 
-    def get_by_twitch_id(self, twitch_id):
-        statement = select(User)
-        self.db_session.exec(statement)
-        # self.db_session.exec
+    async def get_by_twitch_id(self, sub: str):
+        statement = select(User).where(User.sub == sub)
+        result = await self.db_session.exec(statement)
+        return result.first()
 
-    def create(self, create_user_command: CreateUserCommand):
+    async def create(self, create_user_command: CreateUserCommand):
         user = User(
             username=create_user_command.username,
             email=create_user_command.email,
@@ -27,3 +29,5 @@ class UsersRepository:
         )
 
         self.db_session.add(user)
+        await self.db_session.flush()
+        return user

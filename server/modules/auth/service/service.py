@@ -20,23 +20,17 @@ class AuthService:
         self.redirect_url = redirect_url
 
     async def get_login_redirect(self, request: Request):
-        return await self.twitch_auth_client.get_login_redirect(
-            request, self.redirect_url
-        )
+        return await self.twitch_auth_client.get_login_redirect(request, self.redirect_url)
 
     async def handle_callback(self, request: Request):
         try:
-            token = await self.twitch_auth_client.exchange_code_for_token(request)
+            twitch_token = await self.twitch_auth_client.exchange_code_for_token(request)
 
-            access_token = token["access_token"]
-            sub = token["userinfo"]["sub"]
-            username = token["userinfo"]["preferred_username"]
-            provider = token["userinfo"]["iss"]
-            twitch_user_info = (
-                await self.twitch_api_client.get_user_email_and_profile_picture(
-                    sub, access_token
-                )
-            )
+            access_token = twitch_token["access_token"]
+            sub = twitch_token["userinfo"]["sub"]
+            username = twitch_token["userinfo"]["preferred_username"]
+            provider = twitch_token["userinfo"]["iss"]
+            twitch_user_info = await self.twitch_api_client.get_user_email_and_profile_picture(sub, access_token)
 
             create_user_command = CreateUserCommand(
                 username=username,
@@ -45,13 +39,14 @@ class AuthService:
                 email=twitch_user_info.email,
                 profile_image_url=twitch_user_info.profile_image_url,
             )
-            print(f"Creating user with command: {create_user_command}")
 
-            with UnitOfWork() as uow:
+            async with UnitOfWork() as uow:
+                user_found = await uow.users_repository.get_by_twitch_id(sub)
 
-                uow.users_repository.create(create_user_command)
+                if not user_found:
+                    user_found = await uow.users_repository.create(create_user_command)
 
-            return token
+            return twitch_token
 
         except TwitchAuthenticationError as e:
             raise OAuthException("Twitch OAuth failed") from e
