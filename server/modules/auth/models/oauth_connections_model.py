@@ -1,9 +1,6 @@
-from time import timezone
 from uuid import uuid4, UUID
-
-from datetime import datetime
-
-from sqlmodel import DateTime, Field, SQLModel
+from datetime import timezone, datetime
+from sqlmodel import Column, DateTime, Field, SQLModel
 
 
 class OAuthConnection(SQLModel, table=True):
@@ -14,6 +11,5 @@ class OAuthConnection(SQLModel, table=True):
     expires_at: datetime
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
-        sa_type=DateTime(timezone=True),
-        nullable=False,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
     )

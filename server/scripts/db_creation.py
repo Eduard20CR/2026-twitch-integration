@@ -4,7 +4,7 @@ from dotenv import load_dotenv
 from sqlmodel import SQLModel, create_engine
 
 from modules.auth.models.users_model import User
-from modules.auth.models.sessions_model import Session
+from modules.auth.models.user_sessions_model import UserSession
 from modules.auth.models.oauth_connections_model import OAuthConnection
 
 load_dotenv()

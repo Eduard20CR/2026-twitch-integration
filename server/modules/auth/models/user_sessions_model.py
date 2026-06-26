@@ -1,20 +1,16 @@
-from time import timezone
 from uuid import uuid4, UUID
-
-from datetime import datetime
-
-from sqlmodel import DateTime, Field, SQLModel
+from datetime import timezone, datetime, timedelta
+from sqlmodel import Column, DateTime, Field, SQLModel
 
 
-class Session(SQLModel, table=True):
+class UserSession(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="user.id")
     refresh_token_hash: str
     ip_address: str
     user_agent: str
-    expires_at: datetime
+    expires_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
-        sa_type=DateTime(timezone=True),
-        nullable=False,
+        sa_column=Column(DateTime(timezone=True), nullable=False),
     )

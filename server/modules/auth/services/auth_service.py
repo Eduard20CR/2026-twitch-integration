@@ -8,6 +8,7 @@ from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.domain.commands import CreateSessionCommand, CreateUserCommand
 from common.db.uow import UnitOfWork
 from common.utils.random_code_generator import RandomCodeGenerator
+from common.utils.date_delay_generator import DateDelayGenerator
 
 
 class AuthService:
@@ -31,7 +32,7 @@ class AuthService:
 
             twitch_access_token = twitch_token["access_token"]
             twitch_refresh_token = twitch_token["refresh_token"]
-            expires_at = twitch_token["expires_at"]
+            twitch_expires_at = twitch_token["expires_at"]
             sub = twitch_token["userinfo"]["sub"]
             username = twitch_token["userinfo"]["preferred_username"]
             provider = twitch_token["userinfo"]["iss"]
@@ -56,15 +57,19 @@ class AuthService:
                 app_refresh_token = RandomCodeGenerator.generate_random_code(32)
                 app_refresh_token_hash = hashlib.sha256(app_refresh_token.encode()).hexdigest()
 
+                app_token_expires_at = DateDelayGenerator.get_date_plus_days(30)
+
                 create_session_command = CreateSessionCommand(
                     user_id=user_found.id,
                     refresh_token_hash=app_refresh_token_hash,
-                    expires_at=expires_at,
+                    expires_at=app_token_expires_at,
                     ip_address=ip_address,
                     user_agent=user_agent,
                 )
 
-                print(f"Session command: {create_session_command}")
+                app_session = await uow.sessions_repository.create(create_session_command)
+
+                print(f"Created session: {app_session}")
 
             return twitch_token
 
