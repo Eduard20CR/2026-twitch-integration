@@ -5,7 +5,7 @@ from fastapi import APIRouter, Request, HTTPException
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 
-from .service.service import AuthService
+from .services.auth_service import AuthService
 from .controller import AuthController
 from .domain.exceptions import OAuthException
 
