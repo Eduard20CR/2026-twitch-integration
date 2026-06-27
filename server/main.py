@@ -11,6 +11,7 @@ load_dotenv()
 
 app = FastAPI(lifespan=lifespan)
 
+
 app.add_middleware(
     SessionMiddleware,
     secret_key=os.environ.get("AUTH_SESSION_SECRET_KEY", "default_secret_key"),

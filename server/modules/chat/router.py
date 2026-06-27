@@ -3,7 +3,6 @@ import os
 from typing import Dict, Set
 
 from fastapi import APIRouter, FastAPI, WebSocket
-from fastapi.concurrency import asynccontextmanager
 import websockets
 
 chat_router = APIRouter()
@@ -56,16 +55,12 @@ class ConnectionManager:
     async def disconnect(self, channel: str):
         pass
 
-    def add_angular_client_to_channel(
-        self, channel: str, websocket: websockets.WebSocketClientProtocol
-    ):
+    def add_angular_client_to_channel(self, channel: str, websocket: websockets.WebSocketClientProtocol):
         if channel not in self.channels:
             self.channels[channel] = []
         self.channels[channel].append(websocket)
 
-    def remove_angular_client_from_channel(
-        self, channel: str, websocket: websockets.WebSocketClientProtocol
-    ):
+    def remove_angular_client_from_channel(self, channel: str, websocket: websockets.WebSocketClientProtocol):
         if channel in self.channels:
             self.channels[channel].remove(websocket)
             if not self.channels[channel]:  # If the list is empty, remove the channel
@@ -105,13 +100,3 @@ async def twitch_listener():
     twitch_web_socket = TwitchWebSocket(ws_url)
     await twitch_web_socket.connect()
     await twitch_web_socket.listen()
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    # task = asyncio.create_task(twitch_listener())
-
-    yield
-
-    # task.cancel()
-    print("Conexión cerrada y recursos liberados.")

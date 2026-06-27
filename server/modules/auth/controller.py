@@ -1,8 +1,8 @@
 from fastapi import Request
 
 from modules.auth.services.auth_service import AuthService
-from common.web.auh_redirect_factory import RedirectFactory
-from common.web.auth_cookie_factory import CookieFactory
+from common.factories.auh_redirect_factory import RedirectFactory
+from common.factories.auth_cookie_factory import CookieFactory
 
 
 class AuthController:

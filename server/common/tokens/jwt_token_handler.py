@@ -1,8 +1,5 @@
 import jwt
-
-
 from typing import Any, Dict, List, Optional
-import jwt
 
 
 class JWTTokenHandler:

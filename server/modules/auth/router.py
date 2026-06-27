@@ -1,14 +1,15 @@
 import os
 
-from fastapi import APIRouter, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException
 
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
-from common.utils.refresh_token_handler import RefreshTokenHandler
-from common.utils.jwt_token_handler import JWTTokenHandler
-from common.utils.date_delay_generator import DateDelayGenerator
-from common.web.auh_redirect_factory import RedirectFactory
-from common.web.auth_cookie_factory import CookieFactory
+from common.tokens.refresh_token_handler import RefreshTokenHandler
+from common.tokens.jwt_token_handler import JWTTokenHandler
+from common.dates.date_delay_generator import DateDelayGenerator
+from common.factories.auh_redirect_factory import RedirectFactory
+from common.factories.auth_cookie_factory import CookieFactory
+from server.common.dependencies.get_current_user import get_current_user
 
 from .services.auth_service import AuthService
 from .controller import AuthController
@@ -18,10 +19,11 @@ twitch_redirect_url = os.getenv("TWITCH_REDIRECT_URL")
 twitch_client_id = os.getenv("TWITCH_CLIENT_ID")
 frontend_url = os.getenv("FRONTEND_URL")
 jwt_secret_key = os.getenv("JWT_SECRET_KEY")
+jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
 
 date_delay_generator = DateDelayGenerator()
 refresh_token_handler = RefreshTokenHandler()
-jwt_token_handler = JWTTokenHandler(jwt_secret_key=jwt_secret_key)
+jwt_token_handler = JWTTokenHandler(jwt_secret_key=jwt_secret_key, algorithm=jwt_algorithm)
 twitch_auth_client = TwitchAuthClient(client_id=twitch_client_id)
 twitch_api_client = TwitchApiClient(client_id=twitch_client_id)
 redirect_factory = RedirectFactory()
@@ -53,3 +55,8 @@ async def callback(request: Request):
         return await auth_controller.callback(request)
     except OAuthException:
         raise HTTPException(status_code=401, detail="OAuth failed")
+
+
+@auth_router.get("/me")
+async def me(current_user=Depends(get_current_user)):
+    return current_user

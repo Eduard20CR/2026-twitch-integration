@@ -1,9 +1,6 @@
-# infrastructure/twitch_client.py
-
 from fastapi import Request
-import httpx
 
-from common.auth.auth import oauth
+from server.common.auth.auth_engine import oauth
 from modules.auth.domain.exceptions import TwitchAuthenticationError
 
 

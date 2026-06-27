@@ -7,9 +7,9 @@ from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.domain.commands import CreateSessionCommand, CreateUserCommand
 from common.db.uow import UnitOfWork
-from common.utils.refresh_token_handler import RefreshTokenHandler
-from common.utils.date_delay_generator import DateDelayGenerator
-from common.utils.jwt_token_handler import JWTTokenHandler
+from common.tokens.refresh_token_handler import RefreshTokenHandler
+from common.dates.date_delay_generator import DateDelayGenerator
+from common.tokens.jwt_token_handler import JWTTokenHandler
 from modules.auth.schemas.auth_result_dto import AuthResultDTO
 
 
