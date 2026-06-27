@@ -59,5 +59,12 @@ async def callback(request: Request):
 
 @auth_router.get("/me")
 async def me(current_user=Depends(get_current_user)):
-    print("Current user:", current_user)
     return current_user
+
+
+@auth_router.get("/refresh")
+async def refresh(current_user=Depends(get_current_user)):
+    try:
+        return await auth_controller.refresh(current_user)
+    except OAuthException:
+        raise HTTPException(status_code=401, detail="OAuth failed")

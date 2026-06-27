@@ -1,5 +1,3 @@
-from datetime import time
-
 from fastapi import Request
 
 from modules.auth.domain.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
@@ -11,6 +9,8 @@ from common.tokens.refresh_token_handler import RefreshTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
 from common.tokens.jwt_token_handler import JWTTokenHandler
 from modules.auth.schemas.auth_result_dto import AuthResultDTO
+from modules.auth.schemas.user_dto import UserDTO
+from modules.auth.schemas.session_dto import SessionDTO
 
 
 class AuthService:
@@ -36,17 +36,46 @@ class AuthService:
 
     async def handle_callback(self, request: Request):
         try:
-            twitch_token = await self.twitch_auth_client.exchange_code_for_token(request)
+            twitch_token = await self._get_twitch_token(request)
 
-            twitch_access_token = twitch_token["access_token"]
-            twitch_refresh_token = twitch_token["refresh_token"]
-            twitch_expires_at = twitch_token["expires_at"]
-            sub = twitch_token["userinfo"]["sub"]
-            username = twitch_token["userinfo"]["preferred_username"]
-            provider = twitch_token["userinfo"]["iss"]
-            ip_address = request.client.host
-            user_agent = request.headers.get("user-agent", "")
-            twitch_user_info = await self.twitch_api_client.get_user_email_and_profile_picture(sub, twitch_access_token)
+            user = await self._get_or_create_user(twitch_token, request)
+
+            session, raw_refresh_password = await self._create_session(user, request)
+
+            access_token, refresh_token, access_exp, refresh_exp = self._create_tokens(
+                user, session, raw_refresh_password
+            )
+
+            return self._build_auth_response(access_token, refresh_token, access_exp, refresh_exp)
+
+        except TwitchAuthenticationError as e:
+            print(repr(e))
+            raise OAuthException("Twitch OAuth failed") from e
+
+        except UserCreationError as e:
+            print(repr(e))
+            raise OAuthException("Failed during user creation") from e
+
+        except Exception as e:
+            print(repr(e))
+            raise OAuthException("An unexpected error occurred during authentication") from e
+
+    async def _get_twitch_token(self, request: Request):
+        return await self.twitch_auth_client.exchange_code_for_token(request)
+
+    async def _get_or_create_user(self, twitch_token, request: Request):
+        sub = twitch_token["userinfo"]["sub"]
+        username = twitch_token["userinfo"]["preferred_username"]
+        provider = twitch_token["userinfo"]["iss"]
+        access_token = twitch_token["access_token"]
+
+        twitch_user_info = await self.twitch_api_client.get_user_email_and_profile_picture(sub, access_token)
+
+        async with UnitOfWork() as uow:
+            user = await uow.users_repository.get_by_twitch_id(sub)
+
+            if user:
+                return UserDTO(id=user.id, username=user.username, sub=user.sub)
 
             create_user_command = CreateUserCommand(
                 username=username,
@@ -56,53 +85,97 @@ class AuthService:
                 profile_image_url=twitch_user_info.profile_image_url,
             )
 
-            async with UnitOfWork() as uow:
-                user_found = await uow.users_repository.get_by_twitch_id(sub)
+            user = await uow.users_repository.create(create_user_command)
 
-                if not user_found:
-                    user_found = await uow.users_repository.create(create_user_command)
+            return UserDTO(id=user.id, username=user.username, sub=user.sub)
 
-                app_refresh_token = self.refresh_token_handler.generate_random_code(32)
-                app_refresh_token_hash = self.refresh_token_handler.hash_code(app_refresh_token)
+    async def _create_session(self, user, request: Request):
+        ip_address = request.client.host
+        user_agent = request.headers.get("user-agent", "")
 
-                app_refresh_token_expires_at = self.date_delay_generator.get_date_plus_days(30)
+        raw_refresh_password = self.refresh_token_handler.generate_random_code(32)
+        refresh_password_hash = self.refresh_token_handler.hash_code(raw_refresh_password)
+        refresh_password_expires_at = self.date_delay_generator.get_date_plus_days(30)
 
-                create_session_command = CreateSessionCommand(
-                    user_id=user_found.id,
-                    refresh_token_hash=app_refresh_token_hash,
-                    expires_at=app_refresh_token_expires_at,
-                    ip_address=ip_address,
-                    user_agent=user_agent,
-                )
+        async with UnitOfWork() as uow:
 
-                app_session = await uow.sessions_repository.create(create_session_command)
+            create_session_command = CreateSessionCommand(
+                user_id=user.id,
+                refresh_password_hash=refresh_password_hash,
+                expires_at=refresh_password_expires_at,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
 
-                current_time = self.date_delay_generator.get_current_utc_time()
-                app_jwt_token_expires_at = self.date_delay_generator.get_date_plus_hours(1)
-                jwt_token_payload = {
-                    "session_id": str(app_session.id),
-                    "user_id": str(user_found.id),
-                    "iat": int(current_time.timestamp()),
-                    "exp": int(app_jwt_token_expires_at.timestamp()),
-                    "type": "access",
-                }
+            session = await uow.sessions_repository.create(create_session_command)
 
-                client_jwt_token = self.jwt_token_handler.generate_token(payload=jwt_token_payload)
+            session_dto = SessionDTO(
+                id=session.id,
+                user_id=session.user_id,
+                refresh_password_hash=session.refresh_password_hash,
+                ip_address=session.ip_address,
+                user_agent=session.user_agent,
+                expires_at=session.expires_at,
+                created_at=session.created_at,
+            )
 
-                auth_result_dto = AuthResultDTO(
-                    jwt_token=client_jwt_token,
-                    refresh_token=app_refresh_token,
-                    access_expires_in=int(app_jwt_token_expires_at.timestamp() - current_time.timestamp()),
-                    refresh_expires_in=int(app_refresh_token_expires_at.timestamp() - current_time.timestamp()),
-                )
+        return session_dto, raw_refresh_password
 
-            return auth_result_dto
+    def _create_access_token(self, user, session, expires_at):
+        now = self.date_delay_generator.get_current_utc_time()
 
-        except TwitchAuthenticationError as e:
-            raise OAuthException("Twitch OAuth failed") from e
+        payload = {
+            "session_id": str(session.id),
+            "user_id": str(user.id),
+            "iat": int(now.timestamp()),
+            "exp": int(expires_at.timestamp()),
+            "type": "access",
+        }
 
-        except UserCreationError as e:
-            raise OAuthException("Failed during user creation") from e
+        return self.jwt_token_handler.generate_token(payload)
 
-        except Exception as e:
-            raise OAuthException("An unexpected error occurred during authentication") from e
+    def _create_refresh_token(self, user, session, raw_refresh_password, expires_at):
+        now = self.date_delay_generator.get_current_utc_time()
+
+        payload = {
+            "session_id": str(session.id),
+            "user_id": str(user.id),
+            "refresh_password": raw_refresh_password,
+            "iat": int(now.timestamp()),
+            "exp": int(expires_at.timestamp()),
+            "type": "refresh",
+        }
+
+        return self.jwt_token_handler.generate_token(payload)
+
+    def _create_tokens(self, user, session, raw_refresh_password):
+        access_expires_at = self.date_delay_generator.get_date_plus_hours(2)
+        refresh_expires_at = self.date_delay_generator.get_date_plus_days(30)
+
+        access_token = self._create_access_token(
+            user=user,
+            session=session,
+            expires_at=access_expires_at,
+        )
+
+        refresh_token = self._create_refresh_token(
+            user=user,
+            session=session,
+            raw_refresh_password=raw_refresh_password,
+            expires_at=refresh_expires_at,
+        )
+
+        access_expires_in = int((access_expires_at - self.date_delay_generator.get_current_utc_time()).total_seconds())
+        refresh_expires_in = int(
+            (refresh_expires_at - self.date_delay_generator.get_current_utc_time()).total_seconds()
+        )
+
+        return access_token, refresh_token, access_expires_in, refresh_expires_in
+
+    def _build_auth_response(self, access_token, refresh_token, access_expires_in, refresh_expires_in):
+        return AuthResultDTO(
+            jwt_access_token=access_token,
+            jwt_refresh_token=refresh_token,
+            access_expires_in=access_expires_in,
+            refresh_expires_in=refresh_expires_in,
+        )

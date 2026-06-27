@@ -26,10 +26,30 @@ class AuthController:
 
         self.cookie_factory.set_auth_cookies(
             response=response,
-            access_token=auth_result.jwt_token,
-            refresh_token=auth_result.refresh_token,
+            access_token=auth_result.jwt_access_token,
+            refresh_token=auth_result.jwt_refresh_token,
             access_max_age=auth_result.access_expires_in,
             refresh_max_age=auth_result.refresh_expires_in,
         )
 
         return response
+
+    async def refresh(
+        self,
+    ):
+        try:
+            auth_result = await self.service.refresh_tokens()
+
+            response = self.redirect_factory.to_frontend(self.frontend_url)
+
+            self.cookie_factory.set_auth_cookies(
+                response=response,
+                access_token=auth_result.jwt_access_token,
+                refresh_token=auth_result.jwt_refresh_token,
+                access_max_age=auth_result.access_expires_in,
+                refresh_max_age=auth_result.refresh_expires_in,
+            )
+
+            return response
+        except Exception as e:
+            raise e

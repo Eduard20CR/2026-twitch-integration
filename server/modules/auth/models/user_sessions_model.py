@@ -6,7 +6,7 @@ from sqlmodel import Column, DateTime, Field, SQLModel
 class UserSession(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
     user_id: UUID = Field(foreign_key="user.id")
-    refresh_token_hash: str
+    refresh_password_hash: str
     ip_address: str
     user_agent: str
     expires_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))

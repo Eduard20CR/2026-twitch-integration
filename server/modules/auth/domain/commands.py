@@ -14,7 +14,7 @@ class CreateUserCommand(BaseModel):
 
 class CreateSessionCommand(BaseModel):
     user_id: UUID
-    refresh_token_hash: str
+    refresh_password_hash: str
     expires_at: datetime
     ip_address: str
     user_agent: str
