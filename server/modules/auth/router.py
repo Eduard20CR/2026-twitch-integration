@@ -10,6 +10,7 @@ from common.dates.date_delay_generator import DateDelayGenerator
 from common.factories.auh_redirect_factory import RedirectFactory
 from common.factories.auth_cookie_factory import CookieFactory
 from common.dependencies.get_current_user import get_current_user
+from common.dependencies.get_refresh_token import get_refresh_token
 
 from .services.auth_service import AuthService
 from .controller import AuthController
@@ -63,8 +64,8 @@ async def me(current_user=Depends(get_current_user)):
 
 
 @auth_router.get("/refresh")
-async def refresh(current_user=Depends(get_current_user)):
+async def refresh(current_user=Depends(get_current_user), refresh_token=Depends(get_refresh_token)):
     try:
-        return await auth_controller.refresh(current_user)
+        return await auth_controller.refresh(refresh_token)
     except OAuthException:
         raise HTTPException(status_code=401, detail="OAuth failed")

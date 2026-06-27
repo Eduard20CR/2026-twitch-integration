@@ -40,13 +40,11 @@ class AuthService:
 
             user = await self._get_or_create_user(twitch_token, request)
 
-            session, raw_refresh_password = await self._create_session(user, request)
+            session, raw_refresh_token = await self._create_session(user, request)
 
-            access_token, refresh_token, access_exp, refresh_exp = self._create_tokens(
-                user, session, raw_refresh_password
-            )
+            access_token, access_exp, refresh_exp = self._create_token_and_expire_time(user, session)
 
-            return self._build_auth_response(access_token, refresh_token, access_exp, refresh_exp)
+            return self._build_auth_response(access_token, raw_refresh_token, access_exp, refresh_exp)
 
         except TwitchAuthenticationError as e:
             print(repr(e))
@@ -59,6 +57,16 @@ class AuthService:
         except Exception as e:
             print(repr(e))
             raise OAuthException("An unexpected error occurred during authentication") from e
+
+    async def refresh_tokens(self, refresh_token: str):
+        try:
+            async with UnitOfWork() as uow:
+                refresh_token_hashed = self.refresh_token_handler.hash_code(refresh_token)
+                session = await uow.sessions_repository.get_by_refresh_token(refresh_token_hashed)
+
+        except Exception as e:
+            print(repr(e))
+            raise OAuthException("Failed to refresh tokens") from e
 
     async def _get_twitch_token(self, request: Request):
         return await self.twitch_auth_client.exchange_code_for_token(request)
@@ -93,16 +101,16 @@ class AuthService:
         ip_address = request.client.host
         user_agent = request.headers.get("user-agent", "")
 
-        raw_refresh_password = self.refresh_token_handler.generate_random_code(32)
-        refresh_password_hash = self.refresh_token_handler.hash_code(raw_refresh_password)
-        refresh_password_expires_at = self.date_delay_generator.get_date_plus_days(30)
+        raw_refresh_token = self.refresh_token_handler.generate_random_code(32)
+        refresh_token_hash = self.refresh_token_handler.hash_code(raw_refresh_token)
+        refresh_token_expires_at = self.date_delay_generator.get_date_plus_days(30)
 
         async with UnitOfWork() as uow:
 
             create_session_command = CreateSessionCommand(
                 user_id=user.id,
-                refresh_password_hash=refresh_password_hash,
-                expires_at=refresh_password_expires_at,
+                refresh_token_hash=refresh_token_hash,
+                expires_at=refresh_token_expires_at,
                 ip_address=ip_address,
                 user_agent=user_agent,
             )
@@ -112,14 +120,14 @@ class AuthService:
             session_dto = SessionDTO(
                 id=session.id,
                 user_id=session.user_id,
-                refresh_password_hash=session.refresh_password_hash,
+                refresh_token_hash=session.refresh_token_hash,
                 ip_address=session.ip_address,
                 user_agent=session.user_agent,
                 expires_at=session.expires_at,
                 created_at=session.created_at,
             )
 
-        return session_dto, raw_refresh_password
+        return session_dto, raw_refresh_token
 
     def _create_access_token(self, user, session, expires_at):
         now = self.date_delay_generator.get_current_utc_time()
@@ -134,21 +142,7 @@ class AuthService:
 
         return self.jwt_token_handler.generate_token(payload)
 
-    def _create_refresh_token(self, user, session, raw_refresh_password, expires_at):
-        now = self.date_delay_generator.get_current_utc_time()
-
-        payload = {
-            "session_id": str(session.id),
-            "user_id": str(user.id),
-            "refresh_password": raw_refresh_password,
-            "iat": int(now.timestamp()),
-            "exp": int(expires_at.timestamp()),
-            "type": "refresh",
-        }
-
-        return self.jwt_token_handler.generate_token(payload)
-
-    def _create_tokens(self, user, session, raw_refresh_password):
+    def _create_token_and_expire_time(self, user, session):
         access_expires_at = self.date_delay_generator.get_date_plus_hours(2)
         refresh_expires_at = self.date_delay_generator.get_date_plus_days(30)
 
@@ -158,19 +152,12 @@ class AuthService:
             expires_at=access_expires_at,
         )
 
-        refresh_token = self._create_refresh_token(
-            user=user,
-            session=session,
-            raw_refresh_password=raw_refresh_password,
-            expires_at=refresh_expires_at,
-        )
-
         access_expires_in = int((access_expires_at - self.date_delay_generator.get_current_utc_time()).total_seconds())
         refresh_expires_in = int(
             (refresh_expires_at - self.date_delay_generator.get_current_utc_time()).total_seconds()
         )
 
-        return access_token, refresh_token, access_expires_in, refresh_expires_in
+        return access_token, access_expires_in, refresh_expires_in
 
     def _build_auth_response(self, access_token, refresh_token, access_expires_in, refresh_expires_in):
         return AuthResultDTO(

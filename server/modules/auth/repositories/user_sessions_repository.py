@@ -20,11 +20,16 @@ class SessionsRepository:
         result = await self.db_session.exec(statement)
         return result.first()
 
+    async def get_by_refresh_token(self, refresh_token_hash: str):
+        statement = select(UserSession).where(UserSession.refresh_token_hash == refresh_token_hash)
+        result = await self.db_session.exec(statement)
+        return result.first()
+
     async def create(self, create_session_command: CreateSessionCommand):
         try:
             session = UserSession(
                 user_id=create_session_command.user_id,
-                refresh_password_hash=create_session_command.refresh_password_hash,
+                refresh_password_hash=create_session_command.refresh_token_hash,
                 ip_address=create_session_command.ip_address,
                 user_agent=create_session_command.user_agent,
                 expires_at=create_session_command.expires_at,

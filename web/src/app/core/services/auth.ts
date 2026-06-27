@@ -11,6 +11,11 @@ export class Auth {
     this.httpClient.get('http://localhost:8000/api/auth/me', { withCredentials: true }).subscribe((response) => {
       console.log('response', response)
     })
+  }
 
+  public refreshToken() {
+    this.httpClient.get('http://localhost:8000/api/auth/refresh', { withCredentials: true }).subscribe((response) => {
+      console.log('response', response)
+    })
   }
 }

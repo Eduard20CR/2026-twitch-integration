@@ -34,22 +34,20 @@ class AuthController:
 
         return response
 
-    async def refresh(
-        self,
-    ):
+    async def refresh(self, refresh_token: str):
         try:
-            auth_result = await self.service.refresh_tokens()
+            auth_result = await self.service.refresh_tokens(refresh_token)
 
-            response = self.redirect_factory.to_frontend(self.frontend_url)
+            # response = self.redirect_factory.to_frontend(self.frontend_url)
 
-            self.cookie_factory.set_auth_cookies(
-                response=response,
-                access_token=auth_result.jwt_access_token,
-                refresh_token=auth_result.jwt_refresh_token,
-                access_max_age=auth_result.access_expires_in,
-                refresh_max_age=auth_result.refresh_expires_in,
-            )
+            # self.cookie_factory.set_auth_cookies(
+            #     response=response,
+            #     access_token=auth_result.jwt_access_token,
+            #     refresh_token=auth_result.jwt_refresh_token,
+            #     access_max_age=auth_result.access_expires_in,
+            #     refresh_max_age=auth_result.refresh_expires_in,
+            # )
 
-            return response
+            return "response"
         except Exception as e:
             raise e

@@ -14,6 +14,6 @@ export class App implements OnInit {
   protected readonly title = signal('app');
 
   ngOnInit(): void {
-    this.authService.getMe();
+    this.authService.refreshToken();
   }
 }
