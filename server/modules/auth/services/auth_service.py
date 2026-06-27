@@ -103,3 +103,6 @@ class AuthService:
 
         except UserCreationError as e:
             raise OAuthException("Failed during user creation") from e
+
+        except Exception as e:
+            raise OAuthException("An unexpected error occurred during authentication") from e
