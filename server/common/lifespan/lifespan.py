@@ -10,7 +10,7 @@ jwt_algorithm = os.environ.get("JWT_ALGORITHM", "HS256")
 
 
 @asynccontextmanager
-async def lifespan(app: FastAPI):
+async def lifespan_func(app: FastAPI):
     # 🚀 STARTUP
     app.state.jwt_handler = JWTTokenHandler(jwt_secret_key=jwt_secret_key, algorithm=jwt_algorithm)
 

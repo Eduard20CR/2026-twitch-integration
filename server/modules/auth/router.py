@@ -9,7 +9,7 @@ from common.tokens.jwt_token_handler import JWTTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
 from common.factories.auh_redirect_factory import RedirectFactory
 from common.factories.auth_cookie_factory import CookieFactory
-from server.common.dependencies.get_current_user import get_current_user
+from common.dependencies.get_current_user import get_current_user
 
 from .services.auth_service import AuthService
 from .controller import AuthController
@@ -41,7 +41,7 @@ auth_controller = AuthController(
     service=auth_service, redirect_factory=redirect_factory, cookie_factory=cookie_factory, frontend_url=frontend_url
 )
 
-auth_router = APIRouter(prefix="/auth")
+auth_router = APIRouter(prefix="/api/auth")
 
 
 @auth_router.get("/login")
@@ -59,4 +59,5 @@ async def callback(request: Request):
 
 @auth_router.get("/me")
 async def me(current_user=Depends(get_current_user)):
+    print("Current user:", current_user)
     return current_user
