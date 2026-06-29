@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Auth } from '../../core/services/auth';
 
 @Component({
   selector: 'app-game',
@@ -6,4 +7,11 @@ import { Component } from '@angular/core';
   templateUrl: './game.html',
   styleUrl: './game.css',
 })
-export class Game {}
+export class Game {
+  private authService = inject(Auth);
+
+
+  public startGame(): void {
+    this.authService.getMe()
+  }
+}

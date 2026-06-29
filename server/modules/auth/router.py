@@ -58,14 +58,19 @@ async def callback(request: Request):
         raise HTTPException(status_code=401, detail="OAuth failed")
 
 
-@auth_router.get("/check")
-async def me(current_user=Depends(get_current_user)):
-    return {"status": "ok"}
-
-
 @auth_router.get("/refresh")
 async def refresh(refresh_token=Depends(get_refresh_token)):
     try:
         return await auth_controller.refresh(refresh_token)
     except OAuthException:
         raise HTTPException(status_code=401, detail="OAuth failed")
+
+
+@auth_router.get("/me")
+async def me(current_user=Depends(get_current_user)):
+    return {"status": "ok"}
+
+
+@auth_router.get("/check")
+async def me(current_user=Depends(get_current_user)):
+    return {"status": "ok"}
