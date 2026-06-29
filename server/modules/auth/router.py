@@ -1,6 +1,6 @@
 import os
 
-from fastapi import APIRouter, Depends, Request, HTTPException
+from fastapi import APIRouter, Depends, Request, HTTPException, Response
 
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
@@ -58,9 +58,9 @@ async def callback(request: Request):
         raise HTTPException(status_code=401, detail="OAuth failed")
 
 
-@auth_router.get("/me")
+@auth_router.get("/check")
 async def me(current_user=Depends(get_current_user)):
-    return current_user
+    return {"status": "ok"}
 
 
 @auth_router.get("/refresh")
