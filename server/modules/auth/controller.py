@@ -49,3 +49,6 @@ class AuthController:
             return response
         except Exception as e:
             raise e
+
+    async def me(self, user_id: str):
+        return await self.service.get_current_user(user_id)

@@ -68,7 +68,8 @@ async def refresh(refresh_token=Depends(get_refresh_token)):
 
 @auth_router.get("/me")
 async def me(current_user=Depends(get_current_user)):
-    return {"status": "ok"}
+    user_id = current_user.get("user_id")
+    return await auth_controller.me(user_id)
 
 
 @auth_router.get("/check")

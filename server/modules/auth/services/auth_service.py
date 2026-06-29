@@ -12,6 +12,7 @@ from modules.auth.schemas.auth_login_result_dto import AuthLoginResultDTO
 from modules.auth.schemas.user_dto import UserDTO
 from modules.auth.schemas.session_dto import SessionDTO
 from modules.auth.schemas.auth_refresh_result_dto import AuthRefreshResultDTO
+from modules.auth.schemas.user_me_info_dto import UserMeInfoDTO
 
 
 class AuthService:
@@ -78,6 +79,20 @@ class AuthService:
         except Exception as e:
             print(repr(e))
             raise OAuthException("Failed to refresh tokens") from e
+
+    async def get_current_user(self, user_id: str):
+        try:
+            async with UnitOfWork() as uow:
+                user = await uow.users_repository.get_by_id(user_id)
+
+                if not user:
+                    raise OAuthException("User not found")
+
+                return UserMeInfoDTO(username=user.username, email=user.email, profile_image_url=user.profile_image_url)
+
+        except Exception as e:
+            print(repr(e))
+            raise OAuthException("Failed to retrieve current user") from e
 
     async def _get_twitch_token(self, request: Request):
         return await self.twitch_auth_client.exchange_code_for_token(request)
