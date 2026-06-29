@@ -8,9 +8,10 @@ from common.db.uow import UnitOfWork
 from common.tokens.refresh_token_handler import RefreshTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
 from common.tokens.jwt_token_handler import JWTTokenHandler
-from modules.auth.schemas.auth_result_dto import AuthResultDTO
+from modules.auth.schemas.auth_login_result_dto import AuthLoginResultDTO
 from modules.auth.schemas.user_dto import UserDTO
 from modules.auth.schemas.session_dto import SessionDTO
+from modules.auth.schemas.auth_refresh_result_dto import AuthRefreshResultDTO
 
 
 class AuthService:
@@ -42,9 +43,9 @@ class AuthService:
 
             session, raw_refresh_token = await self._create_session(user, request)
 
-            access_token, access_exp, refresh_exp = self._create_token_and_expire_time(user, session)
+            access_token, access_exp, refresh_exp = self._create_token_and_expire_time(user.id, session.id)
 
-            return self._build_auth_response(access_token, raw_refresh_token, access_exp, refresh_exp)
+            return self._build_auth_login_response(access_token, raw_refresh_token, access_exp, refresh_exp)
 
         except TwitchAuthenticationError as e:
             print(repr(e))
@@ -63,6 +64,16 @@ class AuthService:
             async with UnitOfWork() as uow:
                 refresh_token_hashed = self.refresh_token_handler.hash_code(refresh_token)
                 session = await uow.sessions_repository.get_by_refresh_token(refresh_token_hashed)
+
+                if not session:
+                    raise OAuthException("Invalid refresh token")
+
+                if session.expires_at < self.date_delay_generator.get_current_utc_time():
+                    raise OAuthException("Refresh token has expired")
+
+                access_token, access_exp, _ = self._create_token_and_expire_time(session.user_id, session.id)
+
+                return self._build_auth_refresh_response(access_token, access_exp)
 
         except Exception as e:
             print(repr(e))
@@ -129,12 +140,12 @@ class AuthService:
 
         return session_dto, raw_refresh_token
 
-    def _create_access_token(self, user, session, expires_at):
+    def _create_access_token(self, user_id, session_id, expires_at):
         now = self.date_delay_generator.get_current_utc_time()
 
         payload = {
-            "session_id": str(session.id),
-            "user_id": str(user.id),
+            "session_id": str(session_id),
+            "user_id": str(user_id),
             "iat": int(now.timestamp()),
             "exp": int(expires_at.timestamp()),
             "type": "access",
@@ -142,13 +153,13 @@ class AuthService:
 
         return self.jwt_token_handler.generate_token(payload)
 
-    def _create_token_and_expire_time(self, user, session):
+    def _create_token_and_expire_time(self, user_id, session_id):
         access_expires_at = self.date_delay_generator.get_date_plus_hours(2)
         refresh_expires_at = self.date_delay_generator.get_date_plus_days(30)
 
         access_token = self._create_access_token(
-            user=user,
-            session=session,
+            user_id=user_id,
+            session_id=session_id,
             expires_at=access_expires_at,
         )
 
@@ -159,10 +170,16 @@ class AuthService:
 
         return access_token, access_expires_in, refresh_expires_in
 
-    def _build_auth_response(self, access_token, refresh_token, access_expires_in, refresh_expires_in):
-        return AuthResultDTO(
+    def _build_auth_login_response(self, access_token, refresh_token, access_expires_in, refresh_expires_in):
+        return AuthLoginResultDTO(
             jwt_access_token=access_token,
             jwt_refresh_token=refresh_token,
             access_expires_in=access_expires_in,
             refresh_expires_in=refresh_expires_in,
+        )
+
+    def _build_auth_refresh_response(self, access_token, access_expires_in):
+        return AuthRefreshResultDTO(
+            jwt_access_token=access_token,
+            access_expires_in=access_expires_in,
         )

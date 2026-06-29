@@ -64,7 +64,7 @@ async def me(current_user=Depends(get_current_user)):
 
 
 @auth_router.get("/refresh")
-async def refresh(current_user=Depends(get_current_user), refresh_token=Depends(get_refresh_token)):
+async def refresh(refresh_token=Depends(get_refresh_token)):
     try:
         return await auth_controller.refresh(refresh_token)
     except OAuthException:

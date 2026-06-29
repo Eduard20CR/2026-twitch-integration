@@ -1,4 +1,4 @@
-from fastapi import Request
+from fastapi import Request, Response
 
 from modules.auth.services.auth_service import AuthService
 from common.factories.auh_redirect_factory import RedirectFactory
@@ -24,7 +24,7 @@ class AuthController:
 
         response = self.redirect_factory.to_frontend(self.frontend_url)
 
-        self.cookie_factory.set_auth_cookies(
+        self.cookie_factory.set_auth_login_cookies(
             response=response,
             access_token=auth_result.jwt_access_token,
             refresh_token=auth_result.jwt_refresh_token,
@@ -38,16 +38,14 @@ class AuthController:
         try:
             auth_result = await self.service.refresh_tokens(refresh_token)
 
-            # response = self.redirect_factory.to_frontend(self.frontend_url)
+            response = Response()
 
-            # self.cookie_factory.set_auth_cookies(
-            #     response=response,
-            #     access_token=auth_result.jwt_access_token,
-            #     refresh_token=auth_result.jwt_refresh_token,
-            #     access_max_age=auth_result.access_expires_in,
-            #     refresh_max_age=auth_result.refresh_expires_in,
-            # )
+            self.cookie_factory.set_auth_refresh_cookies(
+                response=response,
+                access_token=auth_result.jwt_access_token,
+                access_max_age=auth_result.access_expires_in,
+            )
 
-            return "response"
+            return response
         except Exception as e:
             raise e

@@ -29,7 +29,7 @@ class SessionsRepository:
         try:
             session = UserSession(
                 user_id=create_session_command.user_id,
-                refresh_password_hash=create_session_command.refresh_token_hash,
+                refresh_token_hash=create_session_command.refresh_token_hash,
                 ip_address=create_session_command.ip_address,
                 user_agent=create_session_command.user_agent,
                 expires_at=create_session_command.expires_at,

@@ -3,7 +3,7 @@ from fastapi import Response
 
 class CookieFactory:
 
-    def set_auth_cookies(
+    def set_auth_login_cookies(
         self,
         response: Response,
         access_token: str,
@@ -27,4 +27,19 @@ class CookieFactory:
             secure=True,
             samesite="lax",
             max_age=refresh_max_age,
+        )
+
+    def set_auth_refresh_cookies(
+        self,
+        response: Response,
+        access_token: str,
+        access_max_age: int,
+    ):
+        response.set_cookie(
+            key="access_token",
+            value=access_token,
+            httponly=True,
+            secure=True,
+            samesite="lax",
+            max_age=access_max_age,
         )
