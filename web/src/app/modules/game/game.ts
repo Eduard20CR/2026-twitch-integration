@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { Chat } from './services/chat';
 
 @Component({
   selector: 'app-game',
@@ -7,4 +8,13 @@ import { Component } from '@angular/core';
   styleUrl: './game.css',
 })
 export class Game {
+  private chatService = inject(Chat);
+
+  public onClickConnect() {
+    this.chatService.connect();
+  }
+
+  public onClickDisconnect() {
+    this.chatService.disconnect();
+  }
 }

@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from fastapi import FastAPI
 from modules.auth.router import auth_router
+from modules.chat.router import chat_router
 from common.lifespan import lifespan
 
 load_dotenv()
@@ -27,3 +28,4 @@ app.add_middleware(
 )
 
 app.include_router(auth_router)
+app.include_router(chat_router)
