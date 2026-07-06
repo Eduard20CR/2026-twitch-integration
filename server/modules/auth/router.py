@@ -19,6 +19,7 @@ from .domain.exceptions import OAuthException
 twitch_redirect_url = os.getenv("TWITCH_REDIRECT_URL")
 twitch_client_id = os.getenv("TWITCH_CLIENT_ID")
 frontend_url = os.getenv("FRONTEND_URL")
+home_url = os.getenv("HOME_URL")
 jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
 
@@ -39,7 +40,11 @@ auth_service = AuthService(
     redirect_url=twitch_redirect_url,
 )
 auth_controller = AuthController(
-    service=auth_service, redirect_factory=redirect_factory, cookie_factory=cookie_factory, frontend_url=frontend_url
+    service=auth_service,
+    redirect_factory=redirect_factory,
+    cookie_factory=cookie_factory,
+    frontend_url=frontend_url,
+    home_url=home_url,
 )
 
 auth_router = APIRouter(prefix="/api/auth")
@@ -79,5 +84,13 @@ async def me(current_user=Depends(get_current_user)):
 async def check(current_user=Depends(get_current_user)):
     try:
         return {"status": "ok"}
+    except OAuthException:
+        raise HTTPException(status_code=401, detail="OAuth failed")
+
+
+@auth_router.post("/logout")
+async def logout(refresh_token=Depends(get_refresh_token)):
+    try:
+        return await auth_controller.logout(refresh_token)
     except OAuthException:
         raise HTTPException(status_code=401, detail="OAuth failed")

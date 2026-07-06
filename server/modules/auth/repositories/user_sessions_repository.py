@@ -42,3 +42,11 @@ class SessionsRepository:
         except Exception as e:
             print(repr(e))
             raise SessionCreationError("Failed to create session") from e
+
+    async def delete_by_refresh_token_hash(self, refresh_token_hash: str):
+        statement = select(UserSession).where(UserSession.refresh_token_hash == refresh_token_hash)
+        result = await self.db_session.exec(statement)
+        session = result.first()
+
+        if session:
+            await self.db_session.delete(session)

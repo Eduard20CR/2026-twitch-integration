@@ -43,3 +43,7 @@ class CookieFactory:
             samesite="lax",
             max_age=access_max_age,
         )
+
+    def clear_auth_cookies(self, response: Response):
+        response.delete_cookie(key="access_token")
+        response.delete_cookie(key="refresh_token")

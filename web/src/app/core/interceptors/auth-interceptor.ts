@@ -10,6 +10,10 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const http = inject(HttpClient);
   const authService = inject(Auth);
 
+  if (req.url.includes('/auth/refresh') || req.url.includes('/auth/logout')) {
+    return next(req);
+  }
+
   return next(req).pipe(
     catchError((error: HttpErrorResponse) => {
 

@@ -11,7 +11,7 @@ export class Game {
   private authService = inject(Auth);
 
 
-  public startGame(): void {
-    this.authService.getMe()
+  public onClickLogout(): void {
+    this.authService.logout();
   }
 }

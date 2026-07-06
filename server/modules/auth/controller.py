@@ -1,4 +1,4 @@
-from fastapi import Request, Response
+from fastapi import Request, Response, logger
 
 from modules.auth.services.auth_service import AuthService
 from common.factories.auh_redirect_factory import RedirectFactory
@@ -8,12 +8,18 @@ from common.factories.auth_cookie_factory import CookieFactory
 class AuthController:
 
     def __init__(
-        self, service: AuthService, redirect_factory: RedirectFactory, cookie_factory: CookieFactory, frontend_url: str
+        self,
+        service: AuthService,
+        redirect_factory: RedirectFactory,
+        cookie_factory: CookieFactory,
+        frontend_url: str,
+        home_url: str,
     ):
         self.service = service
         self.redirect_factory = redirect_factory
         self.cookie_factory = cookie_factory
         self.frontend_url = frontend_url
+        self.home_url = home_url
 
     async def login(self, request: Request):
         return await self.service.get_login_redirect(request)
@@ -52,3 +58,14 @@ class AuthController:
 
     async def me(self, user_id: str):
         return await self.service.get_current_user(user_id)
+
+    async def logout(self, refresh_token: str):
+        response = Response(content='{"status":"success"}', media_type="application/json")
+
+        try:
+            await self.service.logout(refresh_token)
+        except Exception as e:
+            logger.logger.exception("Error invalidating refresh token", exc_info=e)
+
+        self.cookie_factory.clear_auth_cookies(response)
+        return response

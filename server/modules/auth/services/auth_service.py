@@ -94,6 +94,20 @@ class AuthService:
             print(repr(e))
             raise OAuthException("Failed to retrieve current user") from e
 
+    async def logout(self, refresh_token: str):
+        try:
+            async with UnitOfWork() as uow:
+                refresh_token_hashed = self.refresh_token_handler.hash_code(refresh_token)
+                session = await uow.sessions_repository.get_by_refresh_token(refresh_token_hashed)
+
+                if not session:
+                    raise OAuthException("Invalid refresh token")
+
+                await uow.sessions_repository.delete_by_refresh_token_hash(refresh_token_hashed)
+        except Exception as e:
+            print(repr(e))
+            raise OAuthException("Failed to logout") from e
+
     async def _get_twitch_token(self, request: Request):
         return await self.twitch_auth_client.exchange_code_for_token(request)
 
