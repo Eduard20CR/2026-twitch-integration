@@ -1,5 +1,4 @@
-import { Component, inject } from '@angular/core';
-import { Auth } from '../../core/services/auth';
+import { Component } from '@angular/core';
 
 @Component({
   selector: 'app-game',
@@ -8,10 +7,4 @@ import { Auth } from '../../core/services/auth';
   styleUrl: './game.css',
 })
 export class Game {
-  private authService = inject(Auth);
-
-
-  public onClickLogout(): void {
-    this.authService.logout();
-  }
 }
