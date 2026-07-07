@@ -10,6 +10,33 @@ export class Chat {
 
   private onMessageEmitter = new Subject<string>();
 
+  public connect(): void {
+    if (this.wsConnection) return;
+
+    this.wsConnection = new WebSocket(`${environment.wsUrl}/api/chat`);
+
+    this.wsConnection.onopen = this.onOpen.bind(this);
+    this.wsConnection.onmessage = this.onMessage.bind(this);
+    this.wsConnection.onclose = this.onClose.bind(this);
+    this.wsConnection.onerror = this.onError.bind(this);
+  }
+
+  public disconnect(): void {
+    if (!this.wsConnection) return;
+
+    this.wsConnection.close();
+    this.wsConnection = null;
+  }
+
+  public sendMessage(message: string): void {
+    if (!this.wsConnection) {
+      console.error('WebSocket connection is not established.');
+      return;
+    }
+
+    this.wsConnection.send(message);
+  }
+
   private onOpen = () => {
     console.log('WebSocket connection established.');
   };
@@ -29,21 +56,5 @@ export class Chat {
     console.error('WebSocket error:', error);
   };
 
-  public connect(): void {
-    if (this.wsConnection) return;
 
-    this.wsConnection = new WebSocket(`${environment.wsUrl}/api/chat`);
-
-    this.wsConnection.onopen = this.onOpen.bind(this);
-    this.wsConnection.onmessage = this.onMessage.bind(this);
-    this.wsConnection.onclose = this.onClose.bind(this);
-    this.wsConnection.onerror = this.onError.bind(this);
-  }
-
-  public disconnect(): void {
-    if (!this.wsConnection) return;
-
-    this.wsConnection.close();
-    this.wsConnection = null;
-  }
 }

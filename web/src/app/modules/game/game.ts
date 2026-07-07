@@ -17,4 +17,9 @@ export class Game {
   public onClickDisconnect() {
     this.chatService.disconnect();
   }
+
+  public onClickSendMessage() {
+    const message = 'Hello from Angular!';
+    this.chatService.sendMessage(message);
+  }
 }

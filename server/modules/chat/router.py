@@ -1,28 +1,80 @@
 import asyncio
-import os
-from typing import Dict, Set
+from typing import Dict
+import uuid
 
-from fastapi import APIRouter, FastAPI, WebSocket
-import websockets
+from fastapi import APIRouter, Depends, FastAPI, WebSocket, WebSocketDisconnect
+
+from common.dependencies.get_current_user_ws import get_current_user_ws
 
 chat_router = APIRouter(prefix="/api/chat")
 
 
 @chat_router.websocket("")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, _=Depends(get_current_user_ws)):
     await websocket.accept()
+
+    connection_id = str(uuid.uuid4())
+
+    receiver = asyncio.create_task(receive_messages(websocket, connection_id))
+
+    ping_sender = asyncio.create_task(send_ping(websocket))
+
+    done, pending = await asyncio.wait([receiver, ping_sender], return_when=asyncio.FIRST_COMPLETED)
+
+    for task in pending:
+        task.cancel()
+
+    print("Connection closed")
+
+
+async def send_ping(websocket: WebSocket):
+    while True:
+        await asyncio.sleep(3)
+        await websocket.send_text("ping keep alive")
+
+
+async def receive_messages(websocket: WebSocket, connection_id: str):
     try:
-        await websocket.send_text("Welcome 1")
-        await websocket.send_text("Welcome 2")
-        await websocket.send_text("Welcome 3")
-
-        # 2) Mantener conexión viva sin bloquear en receive
         while True:
-            await asyncio.sleep(3)
-            await websocket.send_text("ping keep alive")
+            message = await websocket.receive_text()
+            print(f"{connection_id}: {message}")
 
-    except Exception as e:
-        print(f"WebSocket connection closed: {e}")
+    except WebSocketDisconnect:
+        print(f"{connection_id} disconnected")
+
+
+class Room:
+    connections: Dict[str, WebSocket]
+
+    def __init__(self):
+        self.connections = {}
+
+    def add_connection(self, connection_id: str, websocket: WebSocket):
+        self.connections[connection_id] = websocket
+
+    def remove_connection(self, connection_id: str):
+        self.connections.pop(connection_id, None)
+
+    def broadcast(self, message: str):
+        for websocket in self.connections.values():
+            asyncio.create_task(websocket.send_text(message))
+
+    def send_message_to_connection(self, connection_id: str, message: str):
+        websocket = self.connections.get(connection_id)
+        if websocket is not None:
+            asyncio.create_task(websocket.send_text(message))
+
+
+class RoomManager:
+    rooms: Dict[str, Room]
+
+    def __init__(self):
+        self.rooms = {}
+
+    def get_room(self, room_id: str) -> Room:
+        if room_id not in self.rooms:
+            self.rooms[room_id] = Room()
+        return self.rooms[room_id]
 
 
 # ws_url = os.getenv("TWITCH_WS_URL")

@@ -6,20 +6,20 @@ from common.tokens.jwt_token_handler import JWTTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
 
 
-def get_jwt_handler(request: Request) -> JWTTokenHandler:
+def get_jwt_handler_ws(request: WebSocket) -> JWTTokenHandler:
     return request.app.state.jwt_handler
 
 
-def get_date_delay_generator(request: Request) -> DateDelayGenerator:
+def get_date_delay_generator_ws(request: WebSocket) -> DateDelayGenerator:
     return request.app.state.date_delay_generator
 
 
-def get_current_user(
-    request: Request,
-    jwt: JWTTokenHandler = Depends(get_jwt_handler),
-    date_delay_generator: DateDelayGenerator = Depends(get_date_delay_generator),
+def get_current_user_ws(
+    websocket: WebSocket,
+    jwt: JWTTokenHandler = Depends(get_jwt_handler_ws),
+    date_delay_generator: DateDelayGenerator = Depends(get_date_delay_generator_ws),
 ):
-    token = request.cookies.get("access_token")
+    token = websocket.cookies.get("access_token")
 
     if not token:
         raise HTTPException(status_code=401)
