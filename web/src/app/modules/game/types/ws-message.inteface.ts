@@ -1,4 +1,4 @@
 export interface WsMessage {
-    type: string;
+    event: string;
     payload: any;
 }

@@ -40,6 +40,8 @@ class AuthService:
         try:
             twitch_token = await self._get_twitch_token(request)
 
+            print(f"Twitch token received: {twitch_token}")
+
             user = await self._get_or_create_user(twitch_token, request)
 
             session, raw_refresh_token = await self._create_session(user, request)

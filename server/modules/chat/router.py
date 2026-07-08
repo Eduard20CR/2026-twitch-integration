@@ -1,23 +1,26 @@
 import asyncio
+import json
 from typing import Dict
 import uuid
 
 from fastapi import APIRouter, Depends, FastAPI, WebSocket, WebSocketDisconnect
 
 from common.dependencies.get_current_user_ws import get_current_user_ws
+from modules.chat.ws.ws_connection import WsConnection
+from modules.chat.ws import ws_manager
 
 chat_router = APIRouter(prefix="/api/chat")
 
 
 @chat_router.websocket("")
-async def websocket_endpoint(websocket: WebSocket, _=Depends(get_current_user_ws)):
+async def websocket_endpoint(websocket: WebSocket, current_user=Depends(get_current_user_ws)):
     await websocket.accept()
 
-    connection_id = str(uuid.uuid4())
+    ws_connection = WsConnection(websocket)
 
-    receiver = asyncio.create_task(receive_messages(websocket, connection_id))
+    receiver = asyncio.create_task(receive_messages(ws_connection, current_user))
 
-    ping_sender = asyncio.create_task(send_ping(websocket))
+    ping_sender = asyncio.create_task(send_ping(ws_connection))
 
     done, pending = await asyncio.wait([receiver, ping_sender], return_when=asyncio.FIRST_COMPLETED)
 
@@ -27,54 +30,34 @@ async def websocket_endpoint(websocket: WebSocket, _=Depends(get_current_user_ws
     print("Connection closed")
 
 
-async def send_ping(websocket: WebSocket):
+async def send_ping(ws_connection: WsConnection):
     while True:
         await asyncio.sleep(3)
-        await websocket.send_text("ping keep alive")
+        await ws_connection.websocket.send_text("ping keep alive")
 
 
-async def receive_messages(websocket: WebSocket, connection_id: str):
+async def receive_messages(ws_connection: WsConnection, current_user):
     try:
         while True:
-            message = await websocket.receive_text()
-            print(f"{connection_id}: {message}")
+            message = await ws_connection.websocket.receive_text()
+            json_message = json.loads(message)
+
+            event = json_message.get("event")
+            payload = json_message.get("payload")
+
+            print(f"{ws_connection.id}: {message}")
+
+            match event:
+                case "connect_to_chat_room":
+                    # ws_manager.add_user_to_room("", ws_connection)
+                    print(f"{ws_connection.id} connected to chat room")
+                    print(f"Current user: {current_user}")
+
+                case _:
+                    print(f"Unknown event: {event}")
 
     except WebSocketDisconnect:
-        print(f"{connection_id} disconnected")
-
-
-class Room:
-    connections: Dict[str, WebSocket]
-
-    def __init__(self):
-        self.connections = {}
-
-    def add_connection(self, connection_id: str, websocket: WebSocket):
-        self.connections[connection_id] = websocket
-
-    def remove_connection(self, connection_id: str):
-        self.connections.pop(connection_id, None)
-
-    def broadcast(self, message: str):
-        for websocket in self.connections.values():
-            asyncio.create_task(websocket.send_text(message))
-
-    def send_message_to_connection(self, connection_id: str, message: str):
-        websocket = self.connections.get(connection_id)
-        if websocket is not None:
-            asyncio.create_task(websocket.send_text(message))
-
-
-class RoomManager:
-    rooms: Dict[str, Room]
-
-    def __init__(self):
-        self.rooms = {}
-
-    def get_room(self, room_id: str) -> Room:
-        if room_id not in self.rooms:
-            self.rooms[room_id] = Room()
-        return self.rooms[room_id]
+        print(f"{ws_connection.id} disconnected")
 
 
 # ws_url = os.getenv("TWITCH_WS_URL")

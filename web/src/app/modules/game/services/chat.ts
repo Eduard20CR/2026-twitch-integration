@@ -44,8 +44,7 @@ export class Chat {
       return;
     }
 
-    const message: WsMessage = this.createMessage('connectToChatRoom', null);
-    const messageJson = JSON.stringify(message);
+    const messageJson = this.createMessageJson('connect_to_chat_room', null);
 
     this.wsConnection.send(messageJson);
   }
@@ -69,8 +68,13 @@ export class Chat {
     console.error('WebSocket error:', error);
   };
 
-  private createMessage(type: string, payload: any): WsMessage {
-    return { type, payload };
+  private createMessage(event: string, payload: any): WsMessage {
+    return { event, payload };
+  }
+
+  private createMessageJson(event: string, payload: any): string {
+    const message: WsMessage = this.createMessage(event, payload);
+    return JSON.stringify(message);
   }
 
 }
