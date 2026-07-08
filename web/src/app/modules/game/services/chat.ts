@@ -1,6 +1,7 @@
 import { Injectable } from "@angular/core";
 import { Subject } from "rxjs";
 import { environment } from "../../../../environments/environment";
+import { WsMessage } from "../types/ws-message.inteface";
 
 @Injectable({
   providedIn: 'root',
@@ -37,6 +38,18 @@ export class Chat {
     this.wsConnection.send(message);
   }
 
+  public connectToChatRoom(): void {
+    if (!this.wsConnection) {
+      console.error('WebSocket connection is not established.');
+      return;
+    }
+
+    const message: WsMessage = this.createMessage('connectToChatRoom', null);
+    const messageJson = JSON.stringify(message);
+
+    this.wsConnection.send(messageJson);
+  }
+
   private onOpen = () => {
     console.log('WebSocket connection established.');
   };
@@ -56,5 +69,8 @@ export class Chat {
     console.error('WebSocket error:', error);
   };
 
+  private createMessage(type: string, payload: any): WsMessage {
+    return { type, payload };
+  }
 
 }

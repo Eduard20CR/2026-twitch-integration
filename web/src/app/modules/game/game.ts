@@ -22,4 +22,8 @@ export class Game {
     const message = 'Hello from Angular!';
     this.chatService.sendMessage(message);
   }
+
+  public onClickConnectToChatRoom() {
+    this.chatService.connectToChatRoom();
+  }
 }
