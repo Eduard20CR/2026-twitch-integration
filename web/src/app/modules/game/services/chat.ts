@@ -49,6 +49,17 @@ export class Chat {
     this.wsConnection.send(messageJson);
   }
 
+  public leaveChatRoom(): void {
+    if (!this.wsConnection) {
+      console.error('WebSocket connection is not established.');
+      return;
+    }
+
+    const messageJson = this.createMessageJson('leave_chat_room', null);
+
+    this.wsConnection.send(messageJson);
+  }
+
   private onOpen = () => {
     console.log('WebSocket connection established.');
   };

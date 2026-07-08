@@ -26,4 +26,8 @@ export class Game {
   public onClickConnectToChatRoom() {
     this.chatService.connectToChatRoom();
   }
+
+  public onClickLeaveChatRoom() {
+    this.chatService.leaveChatRoom();
+  }
 }
