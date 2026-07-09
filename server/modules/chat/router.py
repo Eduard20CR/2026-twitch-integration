@@ -53,6 +53,7 @@ async def receive_messages(ws_connection: WsConnection, current_user):
 
                 case "pong":
                     print(f"Received pong from {ws_connection.id}")
+                    pass
 
                 case _:
                     print(f"Unknown event: {event}")
