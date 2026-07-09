@@ -51,6 +51,9 @@ async def receive_messages(ws_connection: WsConnection, current_user):
                 case "leave_chat_room":
                     ws_manager.remove_user_from_room(ws_connection.user_id, ws_connection.user_id)
 
+                case "ping":
+                    print(f"Received ping from {ws_connection.id}")
+
                 case _:
                     print(f"Unknown event: {event}")
 
