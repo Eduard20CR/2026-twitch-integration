@@ -52,7 +52,7 @@ async def receive_messages(ws_connection: WsConnection, current_user):
                     ws_manager.remove_user_from_room(ws_connection.user_id, ws_connection.user_id)
 
                 case "pong":
-                    print(f"Received ping from {ws_connection.id}")
+                    print(f"Received pong from {ws_connection.id}")
 
                 case _:
                     print(f"Unknown event: {event}")
