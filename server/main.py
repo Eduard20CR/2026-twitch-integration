@@ -1,11 +1,31 @@
+import os
+
 from dotenv import load_dotenv
+from starlette.middleware.sessions import SessionMiddleware
+from fastapi.middleware.cors import CORSMiddleware
+
+
 from fastapi import FastAPI
-from routers import auth_router
-from routers import chat_router
+from modules.auth.router import auth_router
+from modules.chat.router import chat_router
+from common.lifespan import lifespan
 
 load_dotenv()
 
-app = FastAPI(lifespan=chat_router.lifespan)
+app = FastAPI(lifespan=lifespan.lifespan_func)
 
-app.include_router(auth_router.router)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:4200"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
+app.add_middleware(
+    SessionMiddleware,
+    secret_key=os.environ.get("AUTH_SESSION_SECRET_KEY", "default_secret_key"),
+)
+
+app.include_router(auth_router)
+app.include_router(chat_router)
