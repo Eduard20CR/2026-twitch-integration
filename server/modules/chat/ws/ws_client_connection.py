@@ -3,7 +3,7 @@ import uuid
 from fastapi import WebSocket
 
 
-class WsConnection:
+class WsClientConnection:
     def __init__(self, websocket: WebSocket, user_id: str):
         self.id = str(uuid.uuid4())
         self.websocket = websocket

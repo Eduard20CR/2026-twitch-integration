@@ -1,0 +1,22 @@
+from modules.chat.twitch_ws.ws_twitch_connection_manager import WsTwitchConnectionManager
+from modules.chat.ws.ws_client_connection import WsClientConnection
+from modules.chat.ws.ws_client_manager import WsClientManager
+from modules.chat.events.ws_event_bus import WsEventBus
+
+
+class WsService:
+    def __init__(
+        self,
+        ws_client_manager: WsClientManager,
+        ws_twitch_connection_manager: WsTwitchConnectionManager,
+        ws_event_bus: WsEventBus,
+    ):
+        self.ws_client_manager = ws_client_manager
+        self.ws_twitch_connection_manager = ws_twitch_connection_manager
+        self.ws_event_bus = ws_event_bus
+
+    async def connect_user(self, websocket: WsClientConnection, twitch_channel_username: str, room_id: str):
+        self.ws_client_manager.add_user_to_room(room_id, websocket)
+
+    async def disconnect_user(self, websocket: WsClientConnection, twitch_channel_username: str, room_id: str):
+        self.ws_client_manager.remove_user_from_room(user_id, websocket)
