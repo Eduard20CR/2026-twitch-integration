@@ -4,7 +4,7 @@ from datetime import datetime
 from modules.auth.domain.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
-from modules.auth.domain.commands import CreateSessionCommand, CreateUserCommand
+from modules.auth.domain.commands import CreateOAuthConnectionCommand, CreateSessionCommand, CreateUserCommand
 from common.db.uow import UnitOfWork
 from common.tokens.refresh_token_handler import RefreshTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
@@ -62,6 +62,15 @@ class AuthService:
                 user_id=db_user.id,
                 session_id=db_session.id,
                 expires_at=expiration_times.access_expires_at,
+            )
+
+            await self._create_oauth_connection_in_db(
+                user_id=db_user.id,
+                access_token_encrypted=twitch_token["access_token"],
+                refresh_token_encrypted=twitch_token.get("refresh_token"),
+                access_token_expires_at=datetime.utcfromtimestamp(
+                    twitch_token["expires_in"] + int(datetime.utcnow().timestamp())
+                ),
             )
 
             return self._build_auth_login_response(
@@ -238,6 +247,19 @@ class AuthService:
             access_expires_in=access_expires_in,
             refresh_expires_in=refresh_expires_in,
         )
+
+    async def _create_oauth_connection_in_db(
+        self, user_id: str, access_token_encrypted: str, refresh_token_encrypted: str, access_token_expires_at: datetime
+    ):
+        async with UnitOfWork() as uow:
+            create_oauth_connection_command = CreateOAuthConnectionCommand(
+                user_id=user_id,
+                access_token_encrypted=access_token_encrypted,
+                refresh_token_encrypted=refresh_token_encrypted,
+                access_token_expires_at=access_token_expires_at,
+            )
+
+            await uow.oauth_connections_repository.create(create_oauth_connection_command)
 
     # RESPONSE BUILDERS
 

@@ -18,3 +18,9 @@ class SessionCreationError(Exception):
     """Error al crear una sesión en la base de datos"""
 
     pass
+
+
+class OAuthConnectionCreationError(Exception):
+    """Error al crear una sesión en la base de datos"""
+
+    pass

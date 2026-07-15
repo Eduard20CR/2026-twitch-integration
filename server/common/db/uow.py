@@ -1,5 +1,6 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 
+from modules.auth.repositories.oauth_connections_repository import OauthConnectionsRepository
 from modules.users.repositories.users_repository import UsersRepository
 from modules.auth.repositories.user_sessions_repository import SessionsRepository
 
@@ -13,6 +14,7 @@ class UnitOfWork:
 
         self.users_repository = UsersRepository(self.session)
         self.sessions_repository = SessionsRepository(self.session)
+        self.oauth_connections_repository = OauthConnectionsRepository(self.session)
 
         return self
 
