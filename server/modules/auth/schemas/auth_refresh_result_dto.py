@@ -1,7 +1,6 @@
-from dataclasses import dataclass
+from pydantic import BaseModel
 
 
-@dataclass
-class AuthRefreshResultDTO:
+class AuthRefreshResultDTO(BaseModel):
     jwt_access_token: str
     access_expires_in: int
