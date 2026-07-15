@@ -17,7 +17,6 @@ class WsClientManager:
     def add_user_to_room(self, ws_connection: WsClientConnection):
         room = self.get_room_by_id(ws_connection.get_channel_id())
         room.add_connection(ws_connection)
-        print(self.rooms)
 
     def remove_user_from_room(self, ws_connection: WsClientConnection):
         room = self.rooms.get(ws_connection.get_channel_id())
@@ -28,8 +27,6 @@ class WsClientManager:
         room.remove_connection_by_id(ws_connection.get_id())
         if room.is_empty():
             del self.rooms[ws_connection.get_channel_id()]
-
-        print(self.rooms)
 
 
 ws_client_manager = WsClientManager()

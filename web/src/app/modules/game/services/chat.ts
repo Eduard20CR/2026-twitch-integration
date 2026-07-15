@@ -11,6 +11,8 @@ export class Chat {
 
   private onMessageEmitter = new Subject<string>();
 
+  // PUBLIC METHODS
+
   public connect(): void {
     if (this.wsConnection) return;
 
@@ -60,14 +62,23 @@ export class Chat {
     this.wsConnection.send(messageJson);
   }
 
+  // WS EVENT HANDLERS
+
   private onOpen = () => {
     console.log('WebSocket connection established.');
   };
 
   private onMessage = (event: Event) => {
     const messageEvent = event as MessageEvent;
-    this.onMessageEmitter.next(messageEvent.data);
-    console.log('Received message:', messageEvent.data);
+    const message: WsMessage = JSON.parse(messageEvent.data);
+
+    switch (message.event) {
+      case 'ping':
+        this.onPingMessage(message.payload);
+        break;
+      default:
+        console.warn(`Unhandled WebSocket event: ${message.event}`);
+    }
   };
 
   private onClose = () => {
@@ -79,6 +90,8 @@ export class Chat {
     console.error('WebSocket error:', error);
   };
 
+  // HELPER METHODS
+
   private createMessage(event: string, payload: any): WsMessage {
     return { event, payload };
   }
@@ -88,4 +101,9 @@ export class Chat {
     return JSON.stringify(message);
   }
 
+  // EVENT HANDLERS
+
+  private onPingMessage = (_: string) => {
+    this.sendMessage(this.createMessageJson('pong', {}));
+  }
 }

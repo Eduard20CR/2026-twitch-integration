@@ -8,6 +8,8 @@ from modules.chat.services.ws_service import WsService
 from modules.chat.ws.ws_client_room import WsClientConnection
 from modules.chat.ws.ws_protocol import WsProtocol
 
+from common.logging.logging import logger
+
 
 class ChatService:
     def __init__(self, ws_service: WsService):
@@ -46,7 +48,7 @@ class ChatService:
                 event = json_message.get("event")
                 payload = json_message.get("payload")
 
-                print(f"{ws_connection.get_id()}: {message}")
+                logger.info({"event": event, "payload": payload, "user_id": ws_connection.get_user_info().get("id")})
 
                 match event:
                     case "connect_to_chat_room":
@@ -54,19 +56,20 @@ class ChatService:
                     case "leave_chat_room":
                         self._on_leave_chat_room(ws_connection, payload)
                     case "pong":
-                        print(f"Received pong from {ws_connection.id}")
+                        pass
                     case _:
                         print(f"Unknown event: {event}")
 
         except WebSocketDisconnect:
             print(f"{ws_connection.get_id()} disconnected")
+            self.ws_service.disconnect_user(websocket=ws_connection)
 
     # MESSAGE HANDLERS
 
     def _on_connect_to_chat_room(self, ws_connection: WsClientConnection, _: dict):
         self.ws_service.connect_user(websocket=ws_connection)
 
-    def _on_leave_chat_room(self, ws_connection: WsClientConnection, payload: dict):
+    def _on_leave_chat_room(self, ws_connection: WsClientConnection, _: dict):
         self.ws_service.disconnect_user(websocket=ws_connection)
 
     # HELPERS
