@@ -11,3 +11,6 @@ class WsTwitchConnectionManager:
 
     def get_connection(self, user_id):
         return self.connections.get(user_id)
+
+
+ws_twitch_connection_manager = WsTwitchConnectionManager()

@@ -1,6 +1,6 @@
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from modules.auth.repositories.users_repository import UsersRepository
+from modules.users.repositories.users_repository import UsersRepository
 from modules.auth.repositories.user_sessions_repository import SessionsRepository
 
 from .db_engine import engine

@@ -2,7 +2,7 @@ from sqlmodel import Session, select
 from uuid import UUID
 from modules.auth.domain.commands import CreateSessionCommand
 from modules.auth.domain.exceptions import SessionCreationError
-from modules.auth.models.user_sessions_model import UserSession
+from common.db.models.user_sessions_model import UserSession
 
 
 class SessionsRepository:

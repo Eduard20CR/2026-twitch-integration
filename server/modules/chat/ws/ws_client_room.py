@@ -8,10 +8,13 @@ class WsClientRoom:
         self.connections: Dict[str, WsClientConnection] = {}
 
     def add_connection(self, connection: WsClientConnection):
-        self.connections[connection.id] = connection
+        self.connections[connection.get_id()] = connection
+        print(self.connections)
 
-    def remove_connection(self, connection_id: str):
+    def remove_connection_by_id(self, connection_id: str):
         self.connections.pop(connection_id, None)
+
+        print(self.connections)
 
     async def broadcast(self, message: str):
         for connection in self.connections.values():

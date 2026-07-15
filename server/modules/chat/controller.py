@@ -1,11 +1,9 @@
 import asyncio
 import json
 
-from fastapi import Depends, WebSocket, WebSocketDisconnect
+from fastapi import WebSocket
 
-from common.dependencies import get_current_user_ws
-from modules.chat.router import ws_client_manager
-from modules.chat.service.chat_service import ChatService
+from modules.chat.services.chat_service import ChatService
 from modules.chat.ws.ws_client_connection import WsClientConnection
 
 
@@ -17,6 +15,6 @@ class ChatController:
     async def websocket_endpoint(self, websocket: WebSocket, current_user: dict):
         await websocket.accept()
 
-        ws_connection = WsClientConnection(websocket, current_user.get("user_id"))
+        ws_connection = WsClientConnection(websocket)
 
         await self.chat_service.websocket_endpoint(ws_connection, current_user)
