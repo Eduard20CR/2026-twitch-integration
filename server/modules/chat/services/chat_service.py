@@ -1,14 +1,12 @@
 import asyncio
 import json
 
-from fastapi import WebSocketDisconnect
+from fastapi import WebSocketDisconnect, logger
 
 from modules.auth.services.auth_service import UnitOfWork
 from modules.chat.services.ws_service import WsService
 from modules.chat.ws.ws_client_room import WsClientConnection
 from modules.chat.ws.ws_protocol import WsProtocol
-
-from common.logging.logging import logger
 
 
 class ChatService:
@@ -80,3 +78,10 @@ class ChatService:
             if user_info:
                 return user_info.model_dump()
             return None
+
+    async def _get_access_token(self, ws_connection: WsClientConnection):
+        token = ws_connection.get_access_token()
+        if not token:
+            await ws_connection.get_websocket().close(code=1008)
+            return None
+        return token

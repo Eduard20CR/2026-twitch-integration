@@ -26,7 +26,7 @@ class AuthController:
 
     async def callback(self, request: Request):
 
-        auth_result = await self.service.handle_callback(request)
+        auth_result = await self.service.handle_login_callback(request)
 
         response = self.redirect_factory.to_frontend(self.frontend_url)
 
@@ -42,7 +42,7 @@ class AuthController:
 
     async def refresh(self, refresh_token: str):
         try:
-            auth_result = await self.service.refresh_tokens(refresh_token)
+            auth_result = await self.service.handle_refresh_tokens(refresh_token)
 
             response = Response()
 
@@ -57,13 +57,13 @@ class AuthController:
             raise e
 
     async def me(self, user_id: str):
-        return await self.service.get_current_user(user_id)
+        return await self.service.handle_get_current_user(user_id)
 
     async def logout(self, refresh_token: str):
         response = Response(content='{"status":"success"}', media_type="application/json")
 
         try:
-            await self.service.logout(refresh_token)
+            await self.service.handle_logout(refresh_token)
         except Exception as e:
             logger.logger.exception("Error invalidating refresh token", exc_info=e)
 
