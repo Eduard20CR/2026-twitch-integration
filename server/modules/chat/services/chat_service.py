@@ -1,7 +1,8 @@
 import asyncio
 import json
+from common.logging.logging import logger
 
-from fastapi import WebSocketDisconnect, logger
+from fastapi import WebSocketDisconnect
 
 from modules.auth.services.auth_service import UnitOfWork
 from modules.chat.services.ws_service import WsService
@@ -17,9 +18,11 @@ class ChatService:
 
         user_id = current_user.get("user_id")
         user_info = await self._get_user_info(user_id)
+
         if user_info is None:
-            await ws_connection.websocket.close(code=1008)
-            return
+            await ws_connection.get_websocket().close(code=1008)
+            raise ValueError("User not found")
+
         ws_connection.set_user_info(user_info)
 
         receiver = asyncio.create_task(self._receive_messages(ws_connection))
@@ -30,7 +33,7 @@ class ChatService:
         for task in pending:
             task.cancel()
 
-        print("Connection closed")
+        logger.info(f"WebSocket connection closed for user: {user_info.get('username')}")
 
     async def _send_ping(self, ws_connection: WsClientConnection):
         while True:
@@ -46,20 +49,27 @@ class ChatService:
                 event = json_message.get("event")
                 payload = json_message.get("payload")
 
-                logger.info({"event": event, "payload": payload, "user_id": ws_connection.get_user_info().get("id")})
+                logger.info({"event": event, "payload": payload})
 
                 match event:
                     case "connect_to_chat_room":
                         self._on_connect_to_chat_room(ws_connection, payload)
+                        await ws_connection.send(WsProtocol.info_message("Connected to chat room").model_dump_json())
                     case "leave_chat_room":
                         self._on_leave_chat_room(ws_connection, payload)
+                        await ws_connection.send(WsProtocol.info_message("Left chat room").model_dump_json())
                     case "pong":
-                        pass
+                        logger.info("Received pong from client")
                     case _:
-                        print(f"Unknown event: {event}")
+                        logger.warning(f"Unknown event received: {event}")
 
-        except WebSocketDisconnect:
-            print(f"{ws_connection.get_id()} disconnected")
+        except WebSocketDisconnect as e:
+            logger.info(f"WebSocket disconnected: {e}")
+
+        except Exception as e:
+            logger.error(f"Error in WebSocket connection: {e}")
+
+        finally:
             self.ws_service.disconnect_user(websocket=ws_connection)
 
     # MESSAGE HANDLERS

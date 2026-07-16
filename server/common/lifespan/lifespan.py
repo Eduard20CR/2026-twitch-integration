@@ -1,6 +1,7 @@
 import os
 
 from fastapi import FastAPI
+from fastapi.logger import logger
 from fastapi.concurrency import asynccontextmanager
 
 from common.tokens.jwt_token_handler import JWTTokenHandler
@@ -19,5 +20,5 @@ async def lifespan_func(app: FastAPI):
     yield  # <- la app corre aquí
 
     # 🛑 SHUTDOWN
-    print("Shutting down app")
+    logger.info("Shutting down app")
     app.state.jwt_handler = None

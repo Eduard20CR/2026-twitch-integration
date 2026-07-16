@@ -1,16 +1,16 @@
+from dotenv import load_dotenv
+
+load_dotenv()
+
 import os
 
-from dotenv import load_dotenv
+
 from starlette.middleware.sessions import SessionMiddleware
 from fastapi.middleware.cors import CORSMiddleware
-
-
 from fastapi import FastAPI
 from modules.auth.router import auth_router
 from modules.chat.router import chat_router
 from common.lifespan import lifespan
-
-load_dotenv()
 
 app = FastAPI(lifespan=lifespan.lifespan_func)
 

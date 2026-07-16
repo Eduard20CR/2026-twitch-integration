@@ -16,8 +16,8 @@ class WsService:
         self.ws_event_bus = ws_event_bus
 
     def connect_user(self, websocket: WsClientConnection):
-        channel_username = websocket.get_user_info().get("username")
-        access_token = websocket.get_user_info().get("access_token")
+        # channel_username = websocket.get_user_info().get("username")
+        # access_token = websocket.get_user_info().get("access_token")
 
         self.ws_client_manager.add_user_to_room(websocket)
         # self.ws_twitch_connection_manager.add_connection()

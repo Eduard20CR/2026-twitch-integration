@@ -72,9 +72,14 @@ export class Chat {
     const messageEvent = event as MessageEvent;
     const message: WsMessage = JSON.parse(messageEvent.data);
 
+    console.info(message);
+
     switch (message.event) {
       case 'ping':
         this.onPingMessage(message.payload);
+        break;
+      case "info_message":
+        this.onMessageEmitter.next(message.payload);
         break;
       default:
         console.warn(`Unhandled WebSocket event: ${message.event}`);

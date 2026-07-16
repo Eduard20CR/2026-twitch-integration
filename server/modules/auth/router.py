@@ -2,6 +2,7 @@ import os
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Response
 
+from common.security.encryption import EncryptionService
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from common.tokens.refresh_token_handler import RefreshTokenHandler
@@ -24,7 +25,7 @@ jwt_secret_key = os.getenv("JWT_SECRET_KEY")
 jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
 encryption_key = os.getenv("ENCRYPTION_KEY")
 
-encryption_service = EncryptionService()
+encryption_service = EncryptionService(key=encryption_key)
 date_delay_generator = DateDelayGenerator()
 refresh_token_handler = RefreshTokenHandler()
 jwt_token_handler = JWTTokenHandler(jwt_secret_key=jwt_secret_key, algorithm=jwt_algorithm)
@@ -39,6 +40,7 @@ auth_service = AuthService(
     refresh_token_handler=refresh_token_handler,
     jwt_token_handler=jwt_token_handler,
     date_delay_generator=date_delay_generator,
+    encryption_service=encryption_service,
     redirect_url=twitch_redirect_url,
 )
 auth_controller = AuthController(

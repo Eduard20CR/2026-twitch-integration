@@ -1,6 +1,8 @@
 from fastapi import Request
 from datetime import datetime
+from uuid import UUID
 
+from common.security.encryption import EncryptionService
 from modules.auth.domain.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
@@ -27,6 +29,7 @@ class AuthService:
         refresh_token_handler: RefreshTokenHandler,
         jwt_token_handler: JWTTokenHandler,
         date_delay_generator: DateDelayGenerator,
+        encryption_service: EncryptionService,
         redirect_url: str,
     ):
         self.twitch_auth_client = twitch_auth_client
@@ -35,6 +38,7 @@ class AuthService:
         self.jwt_token_handler = jwt_token_handler
         self.date_delay_generator = date_delay_generator
         self.redirect_url = redirect_url
+        self.encryption_service = encryption_service
 
     # PUBLIC METHODS
 
@@ -64,13 +68,14 @@ class AuthService:
                 expires_at=expiration_times.access_expires_at,
             )
 
+            access_token_encrypted = self.encryption_service.encrypt(access_token)
+            refresh_token_encrypted = self.encryption_service.encrypt(refresh_token_data.raw_refresh_token)
+
             await self._create_oauth_connection_in_db(
                 user_id=db_user.id,
-                access_token_encrypted=twitch_token["access_token"],
-                refresh_token_encrypted=twitch_token.get("refresh_token"),
-                access_token_expires_at=datetime.utcfromtimestamp(
-                    twitch_token["expires_in"] + int(datetime.utcnow().timestamp())
-                ),
+                access_token_encrypted=access_token_encrypted,
+                refresh_token_encrypted=refresh_token_encrypted,
+                access_token_expires_at=expiration_times.access_expires_at,
             )
 
             return self._build_auth_login_response(
@@ -249,7 +254,11 @@ class AuthService:
         )
 
     async def _create_oauth_connection_in_db(
-        self, user_id: str, access_token_encrypted: str, refresh_token_encrypted: str, access_token_expires_at: datetime
+        self,
+        user_id: UUID,
+        access_token_encrypted: str,
+        refresh_token_encrypted: str,
+        access_token_expires_at: datetime,
     ):
         async with UnitOfWork() as uow:
             create_oauth_connection_command = CreateOAuthConnectionCommand(

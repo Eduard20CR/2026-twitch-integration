@@ -11,3 +11,7 @@ class WsProtocol:
     @staticmethod
     def chat_message(message: str):
         return WsMessage(event=WsEvents.CHAT_MESSAGE, payload={"message": message})
+
+    @staticmethod
+    def info_message(info: str):
+        return WsMessage(event=WsEvents.INFO_MESSAGE, payload={"info": info})

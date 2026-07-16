@@ -24,4 +24,4 @@ class CreateOAuthConnectionCommand(BaseModel):
     user_id: UUID
     access_token_encrypted: str
     refresh_token_encrypted: str
-    access_token_expires_at: str
+    access_token_expires_at: datetime

@@ -31,6 +31,3 @@ class OauthConnectionsRepository:
         statement = select(OAuthConnection).where(OAuthConnection.user_id == user_id)
         result = await self.db_session.exec(statement)
         return result.first()
-
-    async def create(self):
-        pass
