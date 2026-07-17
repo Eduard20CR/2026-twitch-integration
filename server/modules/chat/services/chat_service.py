@@ -1,18 +1,31 @@
 import asyncio
 import json
 from common.logging.logging import logger
+from datetime import datetime, timezone
 
 from fastapi import WebSocketDisconnect
 
-from modules.auth.services.auth_service import UnitOfWork
+from modules.auth.domain.commands import UpdateOAuthConnectionCommand
+from modules.auth.services.auth_service import DateDelayGenerator, EncryptionService, UnitOfWork
+from modules.chat.domain.exceptions import UserNotFoundInDB
+from modules.chat.infrastructure.twitch_access_token_updater import TwitchAccessTokenUpdater
 from modules.chat.services.ws_service import WsService
 from modules.chat.ws.ws_client_room import WsClientConnection
 from modules.chat.ws.ws_protocol import WsProtocol
 
 
 class ChatService:
-    def __init__(self, ws_service: WsService):
+    def __init__(
+        self,
+        ws_service: WsService,
+        date_delay_generator: DateDelayGenerator,
+        encryption_service: EncryptionService,
+        twitch_access_token_updater: TwitchAccessTokenUpdater,
+    ):
         self.ws_service = ws_service
+        self.date_delay_generator = date_delay_generator
+        self.encryption_service = encryption_service
+        self.twitch_access_token_updater = twitch_access_token_updater
 
     async def websocket_endpoint(self, ws_connection: WsClientConnection, current_user: dict):
 
@@ -21,9 +34,11 @@ class ChatService:
 
         if user_info is None:
             await ws_connection.get_websocket().close(code=1008)
-            raise ValueError("User not found")
-
+            raise UserNotFoundInDB("User not found")
         ws_connection.set_user_info(user_info)
+
+        user_access_token = await self._get_access_token(user_id)
+        logger.info(f"User {user_info.get('username')} connected to WebSocket with access token: {user_access_token}")
 
         receiver = asyncio.create_task(self._receive_messages(ws_connection))
         ping_sender = asyncio.create_task(self._send_ping(ws_connection))
@@ -89,9 +104,48 @@ class ChatService:
                 return user_info.model_dump()
             return None
 
-    async def _get_access_token(self, ws_connection: WsClientConnection):
-        token = ws_connection.get_access_token()
-        if not token:
-            await ws_connection.get_websocket().close(code=1008)
+    async def _get_access_token(self, user_id: str):
+        async with UnitOfWork() as uow:
+            oauth_info = await uow.oauth_connections_repository.get_by_user_id(user_id)
+
+            current_time = self.date_delay_generator.get_current_utc_time()
+            token_expiration_at = oauth_info.access_token_expires_at
+
+            is_token_expired = self.is_token_expired(token_expiration_at, current_time)
+
+            if not is_token_expired:
+                encrypted_access_token = oauth_info.access_token_encrypted
+                unencrypted_access_token = self.encryption_service.decrypt(encrypted_access_token)
+                return unencrypted_access_token
+
+            encrypted_refresh_token = oauth_info.refresh_token_encrypted
+            unencrypted_refresh_token = self.encryption_service.decrypt(encrypted_refresh_token)
+
+            updated_tokens = await self.twitch_access_token_updater.get_new_access_and_refresh_tokens(
+                unencrypted_refresh_token
+            )
+
+            update_oauth_connection_command = UpdateOAuthConnectionCommand(
+                user_id=user_id,
+                access_token_encrypted=self.encryption_service.encrypt(updated_tokens["access_token"]),
+                refresh_token_encrypted=self.encryption_service.encrypt(updated_tokens["refresh_token"]),
+                access_token_expires_at=updated_tokens["access_token_expires_at"],
+            )
+
+            await uow.oauth_connections_repository.update()
+
             return None
-        return token
+
+    def is_token_expired(
+        self,
+        token_expiration_at: datetime,
+        current_time: datetime,
+    ) -> bool:
+
+        if token_expiration_at.tzinfo is None:
+            token_expiration_at = token_expiration_at.replace(tzinfo=timezone.utc)
+
+        if current_time.tzinfo is None:
+            current_time = current_time.replace(tzinfo=timezone.utc)
+
+        return current_time >= token_expiration_at

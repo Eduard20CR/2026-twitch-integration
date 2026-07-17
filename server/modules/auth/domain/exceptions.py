@@ -24,3 +24,8 @@ class OAuthConnectionCreationError(Exception):
     """Error al crear una sesión en la base de datos"""
 
     pass
+
+
+class OAuthConnectionNotFound(Exception):
+    def __init__(self, user_id: int):
+        super().__init__(f"OAuth connection not found for user {user_id}")

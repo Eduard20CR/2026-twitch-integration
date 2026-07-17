@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Subject } from "rxjs";
 import { environment } from "../../../../environments/environment";
 import { WsMessage } from "../types/ws-message.inteface";
+import { WS_EVENT } from "../enums/ws-events.enum";
 
 @Injectable({
   providedIn: 'root',
@@ -72,15 +73,16 @@ export class Chat {
     const messageEvent = event as MessageEvent;
     const message: WsMessage = JSON.parse(messageEvent.data);
 
-    console.info(message);
-
     switch (message.event) {
-      case 'ping':
+      case WS_EVENT.PING:
         this.onPingMessage(message.payload);
         break;
-      case "info_message":
+
+      case WS_EVENT.INFO_MESSAGE:
         this.onMessageEmitter.next(message.payload);
+        console.log("Received info_message:", message.payload);
         break;
+
       default:
         console.warn(`Unhandled WebSocket event: ${message.event}`);
     }

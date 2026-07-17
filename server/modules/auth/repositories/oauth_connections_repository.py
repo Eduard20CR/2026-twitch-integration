@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 
 from common.db.models.oauth_connections_model import OAuthConnection
-from modules.auth.domain.commands import CreateOAuthConnectionCommand
-from modules.auth.domain.exceptions import OAuthConnectionCreationError
+from modules.auth.domain.commands import CreateOAuthConnectionCommand, UpdateOAuthConnectionCommand
+from modules.auth.domain.exceptions import OAuthConnectionCreationError, OAuthConnectionNotFound
 
 
 class OauthConnectionsRepository:
@@ -27,7 +27,41 @@ class OauthConnectionsRepository:
             print(repr(e))
             raise OAuthConnectionCreationError("Failed to create session") from e
 
-    async def get_by_user_id(self, user_id: int):
-        statement = select(OAuthConnection).where(OAuthConnection.user_id == user_id)
+    async def get_by_user_id(self, user_id: int) -> OAuthConnection:
+        statement = (
+            select(OAuthConnection)
+            .where(OAuthConnection.user_id == user_id)
+            .order_by(OAuthConnection.access_token_expires_at.desc())
+            .limit(1)
+        )
+
         result = await self.db_session.exec(statement)
-        return result.first()
+        connection = result.first()
+
+        if connection is None:
+            raise OAuthConnectionNotFound(user_id)
+
+        return connection
+
+    async def update(self, update_oauth_connection_command: UpdateOAuthConnectionCommand):
+        statement = (
+            select(OAuthConnection)
+            .where(OAuthConnection.user_id == update_oauth_connection_command.user_id)
+            .order_by(OAuthConnection.access_token_expires_at.desc())
+            .limit(1)
+        )
+
+        result = await self.db_session.exec(statement)
+        connection = result.first()
+
+        if connection is None:
+            raise OAuthConnectionNotFound(update_oauth_connection_command.user_id)
+
+        connection.access_token_encrypted = update_oauth_connection_command.access_token_encrypted
+        connection.refresh_token_encrypted = update_oauth_connection_command.refresh_token_encrypted
+        connection.access_token_expires_at = update_oauth_connection_command.access_token_expires_at
+
+        self.db_session.add(connection)
+        await self.db_session.flush()
+
+        return connection
