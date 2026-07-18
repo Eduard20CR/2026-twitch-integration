@@ -5,10 +5,10 @@ from sqlmodel import Column, DateTime, Field, SQLModel
 
 class OAuthConnection(SQLModel, table=True):
     id: UUID = Field(default_factory=uuid4, primary_key=True)
-    user_id: UUID = Field(foreign_key="user.id")
+    user_id: UUID = Field(foreign_key="user.id", index=True, nullable=False)
     access_token_encrypted: str
     refresh_token_encrypted: str
-    expires_at: datetime
+    access_token_expires_at: datetime = Field(sa_column=Column(DateTime(timezone=True), nullable=False))
     created_at: datetime = Field(
         default_factory=lambda: datetime.now(timezone.utc),
         sa_column=Column(DateTime(timezone=True), nullable=False),

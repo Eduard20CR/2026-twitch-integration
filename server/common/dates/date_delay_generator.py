@@ -11,3 +11,6 @@ class DateDelayGenerator:
 
     def get_current_utc_time(self) -> datetime:
         return datetime.now(timezone.utc)
+
+    def get_date_plus_seconds(self, seconds: int) -> datetime:
+        return datetime.now(timezone.utc) + timedelta(seconds=seconds)

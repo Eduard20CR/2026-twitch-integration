@@ -1,7 +1,7 @@
 from sqlmodel import Session, select
 
 from modules.auth.domain.commands import CreateUserCommand
-from modules.auth.models.users_model import User
+from common.db.models.users_model import User
 from modules.auth.domain.exceptions import UserCreationError
 
 

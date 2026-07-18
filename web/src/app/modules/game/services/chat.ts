@@ -2,6 +2,7 @@ import { Injectable } from "@angular/core";
 import { Subject } from "rxjs";
 import { environment } from "../../../../environments/environment";
 import { WsMessage } from "../types/ws-message.inteface";
+import { WS_EVENT } from "../enums/ws-events.enum";
 
 @Injectable({
   providedIn: 'root',
@@ -10,6 +11,8 @@ export class Chat {
   private wsConnection: WebSocket | null = null;
 
   private onMessageEmitter = new Subject<string>();
+
+  // PUBLIC METHODS
 
   public connect(): void {
     if (this.wsConnection) return;
@@ -60,14 +63,29 @@ export class Chat {
     this.wsConnection.send(messageJson);
   }
 
+  // WS EVENT HANDLERS
+
   private onOpen = () => {
     console.log('WebSocket connection established.');
   };
 
   private onMessage = (event: Event) => {
     const messageEvent = event as MessageEvent;
-    this.onMessageEmitter.next(messageEvent.data);
-    console.log('Received message:', messageEvent.data);
+    const message: WsMessage = JSON.parse(messageEvent.data);
+
+    switch (message.event) {
+      case WS_EVENT.PING:
+        this.onPingMessage(message.payload);
+        break;
+
+      case WS_EVENT.INFO_MESSAGE:
+        this.onMessageEmitter.next(message.payload);
+        console.log("Received info_message:", message.payload);
+        break;
+
+      default:
+        console.warn(`Unhandled WebSocket event: ${message.event}`);
+    }
   };
 
   private onClose = () => {
@@ -79,6 +97,8 @@ export class Chat {
     console.error('WebSocket error:', error);
   };
 
+  // HELPER METHODS
+
   private createMessage(event: string, payload: any): WsMessage {
     return { event, payload };
   }
@@ -88,4 +108,9 @@ export class Chat {
     return JSON.stringify(message);
   }
 
+  // EVENT HANDLERS
+
+  private onPingMessage = (_: string) => {
+    this.sendMessage(this.createMessageJson('pong', {}));
+  }
 }

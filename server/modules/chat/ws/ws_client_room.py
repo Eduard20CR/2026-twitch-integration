@@ -1,16 +1,16 @@
 from typing import Dict
 
-from modules.chat.ws.ws_connection import WsConnection
+from modules.chat.ws.ws_client_connection import WsClientConnection
 
 
-class WsRoom:
+class WsClientRoom:
     def __init__(self):
-        self.connections: Dict[str, WsConnection] = {}
+        self.connections: Dict[str, WsClientConnection] = {}
 
-    def add_connection(self, connection: WsConnection):
-        self.connections[connection.id] = connection
+    def add_connection(self, connection: WsClientConnection):
+        self.connections[connection.get_id()] = connection
 
-    def remove_connection(self, connection_id: str):
+    def remove_connection_by_id(self, connection_id: str):
         self.connections.pop(connection_id, None)
 
     async def broadcast(self, message: str):
@@ -23,7 +23,7 @@ class WsRoom:
         if connection:
             await connection.send(message)
 
-    def get_connection(self, connection_id: str) -> WsConnection | None:
+    def get_connection(self, connection_id: str) -> WsClientConnection | None:
         return self.connections.get(connection_id)
 
     def is_empty(self) -> bool:
