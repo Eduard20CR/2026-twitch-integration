@@ -70,12 +70,13 @@ class AuthService:
 
             twitch_access_token_encrypted = self.encryption_service.encrypt(twitch_token["access_token"])
             twitch_refresh_token_encrypted = self.encryption_service.encrypt(twitch_token["refresh_token"])
+            twitch_access_token_expires_at = self.date_delay_generator.get_date_plus_seconds(twitch_token["expires_in"])
 
             await self._create_oauth_connection_in_db(
                 user_id=db_user.id,
                 access_token_encrypted=twitch_access_token_encrypted,
                 refresh_token_encrypted=twitch_refresh_token_encrypted,
-                access_token_expires_at=expiration_times.access_expires_at,
+                access_token_expires_at=twitch_access_token_expires_at,
             )
 
             return self._build_auth_login_response(
