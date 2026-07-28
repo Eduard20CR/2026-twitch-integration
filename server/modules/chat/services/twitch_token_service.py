@@ -3,8 +3,9 @@ from datetime import datetime, timezone
 
 from common.dates.date_delay_generator import DateDelayGenerator
 from common.db.uow import UnitOfWork
+from common.security.encryption import EncryptionService
 from modules.auth.repositories.oauth_connections_repository import OAuthConnection, UpdateOAuthConnectionCommand
-from modules.chat.services.chat_service import EncryptionService, TwitchAccessTokenUpdater
+from modules.chat.infrastructure.twitch_access_token_updater import TwitchAccessTokenUpdater
 
 
 class TwitchTokenService:

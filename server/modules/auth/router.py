@@ -2,6 +2,7 @@ import os
 
 from fastapi import APIRouter, Depends, Request, HTTPException, Response
 
+from common.env.settings import settings
 from common.security.encryption import EncryptionService
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
@@ -17,20 +18,12 @@ from .services.auth_service import AuthService
 from .controller import AuthController
 from .domain.exceptions import OAuthException
 
-twitch_redirect_url = os.getenv("TWITCH_REDIRECT_URL")
-twitch_client_id = os.getenv("TWITCH_CLIENT_ID")
-frontend_url = os.getenv("FRONTEND_URL")
-home_url = os.getenv("HOME_URL")
-jwt_secret_key = os.getenv("JWT_SECRET_KEY")
-jwt_algorithm = os.getenv("JWT_ALGORITHM", "HS256")
-encryption_key = os.getenv("ENCRYPTION_KEY")
-
-encryption_service = EncryptionService(key=encryption_key)
+encryption_service = EncryptionService(key=settings.encryption_key)
 date_delay_generator = DateDelayGenerator()
 refresh_token_handler = RefreshTokenHandler()
-jwt_token_handler = JWTTokenHandler(jwt_secret_key=jwt_secret_key, algorithm=jwt_algorithm)
-twitch_auth_client = TwitchAuthClient(client_id=twitch_client_id)
-twitch_api_client = TwitchApiClient(client_id=twitch_client_id)
+jwt_token_handler = JWTTokenHandler(jwt_secret_key=settings.jwt_secret_key, algorithm=settings.jwt_algorithm)
+twitch_auth_client = TwitchAuthClient(client_id=settings.twitch_client_id)
+twitch_api_client = TwitchApiClient(client_id=settings.twitch_client_id)
 redirect_factory = RedirectFactory()
 cookie_factory = CookieFactory()
 
@@ -41,14 +34,15 @@ auth_service = AuthService(
     jwt_token_handler=jwt_token_handler,
     date_delay_generator=date_delay_generator,
     encryption_service=encryption_service,
-    redirect_url=twitch_redirect_url,
+    redirect_url=settings.twitch_redirect_url,
 )
+
 auth_controller = AuthController(
     service=auth_service,
     redirect_factory=redirect_factory,
     cookie_factory=cookie_factory,
-    frontend_url=frontend_url,
-    home_url=home_url,
+    frontend_url=settings.frontend_url,
+    home_url=settings.home_url,
 )
 
 auth_router = APIRouter(prefix="/api/auth")

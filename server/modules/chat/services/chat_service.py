@@ -1,14 +1,10 @@
 import asyncio
 import json
-from common.logging.logging import logger
-from datetime import datetime, timezone
-
 from fastapi import WebSocketDisconnect
 
-from modules.auth.domain.commands import UpdateOAuthConnectionCommand
-from modules.auth.services.auth_service import DateDelayGenerator, EncryptionService, UnitOfWork
+from common.logging.logger import logger
+from modules.auth.services.auth_service import UnitOfWork
 from modules.chat.domain.exceptions import UserNotFoundInDB
-from modules.chat.infrastructure.twitch_access_token_updater import TwitchAccessTokenUpdater
 from modules.chat.services.twitch_token_service import TwitchTokenService
 from modules.chat.services.ws_service import WsService
 from modules.chat.ws.ws_client_room import WsClientConnection
@@ -66,7 +62,7 @@ class ChatService:
 
                 match event:
                     case "connect_to_chat_room":
-                        self._on_connect_to_chat_room(ws_connection, payload)
+                        await self._on_connect_to_chat_room(ws_connection, payload)
                         await ws_connection.send(WsProtocol.info_message("Connected to chat room").model_dump_json())
                     case "leave_chat_room":
                         self._on_leave_chat_room(ws_connection, payload)
@@ -87,8 +83,8 @@ class ChatService:
 
     # MESSAGE HANDLERS
 
-    def _on_connect_to_chat_room(self, ws_connection: WsClientConnection, _: dict):
-        self.ws_service.connect_user(websocket=ws_connection)
+    async def _on_connect_to_chat_room(self, ws_connection: WsClientConnection, _: dict):
+        await self.ws_service.connect_user(websocket=ws_connection)
 
     def _on_leave_chat_room(self, ws_connection: WsClientConnection, _: dict):
         self.ws_service.disconnect_user(websocket=ws_connection)

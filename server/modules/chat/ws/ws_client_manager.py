@@ -28,5 +28,13 @@ class WsClientManager:
         if room.is_empty():
             del self.rooms[ws_connection.get_channel_id()]
 
+    def is_room_empty(self, room_id: str) -> bool:
+        room = self.rooms.get(room_id)
+
+        if room is None:
+            return True
+
+        return room.is_empty()
+
 
 ws_client_manager = WsClientManager()
