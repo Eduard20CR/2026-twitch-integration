@@ -42,7 +42,7 @@ class WsTwitchConnection:
 
         # Aquí tenemos que esperar a que Twitch mande session_welcome
         while self.eventsub_connection.get_session_id() is None:
-            await asyncio.sleep(0.1)
+            await asyncio.sleep(0.5)
             logger.info(
                 {
                     "message": "Waiting for Twitch EventSub session_id",
