@@ -1,0 +1,25 @@
+services:
+  postgres:
+    image: postgres:latest
+    container_name: postgres-dev
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: mysecretpassword
+      POSTGRES_DB: dev-twitch-integration
+
+  redis:
+    image: redis:8-alpine
+    container_name: redis-dev
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    # volumes:
+      # - redis-data:/data
+    # command: redis-server --appendonly yes
+
+volumes:
+  postgres-data:
+  redis-data:
