@@ -65,7 +65,7 @@ class ChatService:
                         await self._on_connect_to_chat_room(ws_connection, payload)
                         await ws_connection.send(WsProtocol.info_message("Connected to chat room").model_dump_json())
                     case "leave_chat_room":
-                        self._on_leave_chat_room(ws_connection, payload)
+                        await self._on_leave_chat_room(ws_connection, payload)
                         await ws_connection.send(WsProtocol.info_message("Left chat room").model_dump_json())
                     case "pong":
                         logger.info("Received pong from client")
@@ -85,9 +85,11 @@ class ChatService:
 
     async def _on_connect_to_chat_room(self, ws_connection: WsClientConnection, _: dict):
         await self.ws_service.connect_user(websocket=ws_connection)
+        logger.info(f"User {ws_connection.get_user_info().get('username')} has connected to the chat room")
 
-    def _on_leave_chat_room(self, ws_connection: WsClientConnection, _: dict):
-        self.ws_service.disconnect_user(websocket=ws_connection)
+    async def _on_leave_chat_room(self, ws_connection: WsClientConnection, _: dict):
+        await self.ws_service.disconnect_user(websocket=ws_connection)
+        logger.info(f"User {ws_connection.get_user_info().get('username')} has left the chat room")
 
     # HELPERS
 

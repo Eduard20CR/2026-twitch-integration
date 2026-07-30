@@ -1,4 +1,3 @@
-import asyncio
 from common.logging.logger import logger
 from modules.chat.infrastructure.ws_twitch_event_sub_connection import WsTwitchEventSubConnection
 from modules.chat.infrastructure.ws_twitch_subscription import TwitchSubscription
@@ -10,11 +9,11 @@ class WsTwitchConnection:
         self,
         client_id: str,
         access_token: str,
-        user_id: str,
+        channel_id: str,
     ):
-        self.user_id = user_id
+        self.channel_id = channel_id
 
-        self.eventsub_connection = WsTwitchEventSubConnection()
+        self.eventsub_connection = WsTwitchEventSubConnection(on_session_created=self._on_session_created)
 
         self.subscription = None
 
@@ -24,7 +23,7 @@ class WsTwitchConnection:
         logger.info(
             {
                 "message": "WsTwitchConnection created",
-                "user_id": self.user_id,
+                "user_id": self.channel_id,
                 "client_id": self.client_id,
                 "access_token": self.access_token,
             }
@@ -40,34 +39,59 @@ class WsTwitchConnection:
 
         await self.eventsub_connection.connect()
 
-        # Aquí tenemos que esperar a que Twitch mande session_welcome
-        while self.eventsub_connection.get_session_id() is None:
-            await asyncio.sleep(0.5)
-            logger.info(
-                {
-                    "message": "Waiting for Twitch EventSub session_id",
-                }
-            )
+        # # Aquí tenemos que esperar a que Twitch mande session_welcome
+        # while self.eventsub_connection.get_session_id() is None:
+        #     await asyncio.sleep(0.5)
+        #     logger.info(
+        #         {
+        #             "message": "Waiting for Twitch EventSub session_id",
+        #         }
+        #     )
+
+        # logger.info(
+        #     {
+        #         "message": "Twitch EventSub connected",
+        #         "session_id": self.eventsub_connection.get_session_id(),
+        #     }
+        # )
+
+        # self.subscription = TwitchSubscription(
+        #     client_id=self.client_id,
+        #     access_token=self.access_token,
+        #     channel_id=self.channel_id,
+        #     session_id=self.eventsub_connection.get_session_id(),
+        # )
+
+        # logger.info(
+        #     {
+        #         "message": "Subscribing to Twitch EventSub",
+        #         "session_id": self.eventsub_connection.get_session_id(),
+        #     }
+        # )
+
+        # await self.subscription.subscribe_chat()
+
+        # logger.info(
+        #     {
+        #         "message": "Subscribed to Twitch EventSub",
+        #         "session_id": self.eventsub_connection.get_session_id(),
+        #     }
+        # )
+
+    async def _on_session_created(self, session_id: str):
 
         logger.info(
             {
-                "message": "Twitch EventSub connected",
-                "session_id": self.eventsub_connection.get_session_id(),
+                "message": "Creating Twitch subscriptions",
+                "session_id": session_id,
             }
         )
 
         self.subscription = TwitchSubscription(
             client_id=self.client_id,
             access_token=self.access_token,
-            user_id=self.user_id,
-            session_id=self.eventsub_connection.get_session_id(),
-        )
-
-        logger.info(
-            {
-                "message": "Subscribing to Twitch EventSub",
-                "session_id": self.eventsub_connection.get_session_id(),
-            }
+            channel_id=self.channel_id,
+            session_id=session_id,
         )
 
         await self.subscription.subscribe_chat()
@@ -75,7 +99,7 @@ class WsTwitchConnection:
         logger.info(
             {
                 "message": "Subscribed to Twitch EventSub",
-                "session_id": self.eventsub_connection.get_session_id(),
+                "session_id": session_id,
             }
         )
 

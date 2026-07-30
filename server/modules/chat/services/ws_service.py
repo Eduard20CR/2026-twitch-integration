@@ -20,8 +20,13 @@ class WsService:
         access_token = websocket.get_access_token()
         print(f"User connected: {channel_username} with access token: {access_token}")
 
-        self.ws_client_manager.add_user_to_room(websocket)
+        # self.ws_client_manager.add_user_to_room(websocket)
         await self.ws_twitch_connection_manager.add_connection(websocket)
 
-    def disconnect_user(self, websocket: WsClientConnection):
-        self.ws_client_manager.remove_user_from_room(websocket)
+    async def disconnect_user(self, websocket: WsClientConnection):
+        # self.ws_client_manager.remove_user_from_room(websocket)
+
+        is_room_empty = self.ws_client_manager.is_room_empty(websocket.get_channel_id())
+
+        if is_room_empty:
+            await self.ws_twitch_connection_manager.remove_connection(websocket.get_channel_id())
