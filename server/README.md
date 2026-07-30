@@ -21,10 +21,6 @@ auth/
 │   ├── twitch_client.py
 │   └── exceptions.py    # Integraciones externas y errores de servicios externos
 
-├── models/
-│   ├── user_model.py
-│   └── session_model.py # Modelos ORM (estructura de base de datos)
-
 ├── domain/
 │   ├── entities.py
 │   └── exceptions.py    # Entidades de negocio puras y errores del dominio
