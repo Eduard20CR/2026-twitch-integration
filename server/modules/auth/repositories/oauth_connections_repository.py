@@ -39,7 +39,7 @@ class OauthConnectionsRepository:
         return connection
 
     @handle_database_errors
-    async def update2(self, oauth_connection: OAuthConnection, update_oauth_connection_dto: UpdateOAuthConnectionDTO):
+    async def update(self, oauth_connection: OAuthConnection, update_oauth_connection_dto: UpdateOAuthConnectionDTO):
 
         oauth_connection.access_token_encrypted = update_oauth_connection_dto.access_token_encrypted
         oauth_connection.refresh_token_encrypted = update_oauth_connection_dto.refresh_token_encrypted

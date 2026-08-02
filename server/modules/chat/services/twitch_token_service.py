@@ -4,6 +4,7 @@ from datetime import datetime, timezone
 from common.dates.date_delay_generator import DateDelayGenerator
 from common.db.uow import UnitOfWork
 from common.security.encryption import EncryptionService
+from modules.auth.exceptions.domain import OAuthConnectionNotFound
 from modules.auth.repositories.oauth_connections_repository import OAuthConnection, UpdateOAuthConnectionDTO
 from modules.chat.infrastructure.twitch_access_token_updater import TwitchAccessTokenUpdater
 
@@ -39,14 +40,19 @@ class TwitchTokenService:
 
         tokens = await self.twitch_access_token_updater.get_new_access_and_refresh_tokens(refresh_token)
 
-        command = UpdateOAuthConnectionDTO(
+        update_oauth_connection_dto = UpdateOAuthConnectionDTO(
             user_id=oauth_connection.user_id,
             access_token_encrypted=self.encryption_service.encrypt(tokens.access_token),
             refresh_token_encrypted=self.encryption_service.encrypt(tokens.refresh_token),
             access_token_expires_at=(self.date_delay_generator.get_date_plus_seconds(tokens.expires_in)),
         )
 
-        await uow.oauth_connections_repository.update(command)
+        oauth_connection = await uow.oauth_connections_repository.get_by_user_id(oauth_connection.user_id)
+
+        if oauth_connection is None:
+            raise OAuthConnectionNotFound(oauth_connection.user_id)
+
+        await uow.oauth_connections_repository.update(oauth_connection, update_oauth_connection_dto)
 
         return tokens.access_token
 
