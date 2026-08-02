@@ -49,5 +49,8 @@ class SessionsRepository:
         result = await self.db_session.exec(statement)
         session = result.first()
 
-        if session:
-            await self.db_session.delete(session)
+        if session is None:
+            return False
+
+        await self.db_session.delete(session)
+        return True
