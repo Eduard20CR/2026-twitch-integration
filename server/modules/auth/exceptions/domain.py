@@ -7,10 +7,6 @@ class OAuthException(Exception):
     pass
 
 
-class TwitchAuthenticationError(Exception):
-    pass
-
-
 class UserCreationError(Exception):
     """Error al crear un usuario en la base de datos"""
 

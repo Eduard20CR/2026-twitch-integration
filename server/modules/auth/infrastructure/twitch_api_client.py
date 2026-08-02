@@ -1,7 +1,13 @@
-# infrastructure/twitch_client.py
-
 import httpx
 
+from httpx import HTTPStatusError, TimeoutException, RequestError
+from modules.auth.exceptions.infrastructure import (
+    TwitchApiException,
+    TwitchConnectionError,
+    TwitchRateLimitExceeded,
+    TwitchTimeoutError,
+    TwitchTokenExpired,
+)
 from modules.auth.schemas.twitch_user_information_response import TwitchUserInformationResponse
 
 
@@ -20,10 +26,26 @@ class TwitchApiClient:
             "Client-Id": self.client_id,
         }
 
-        async with httpx.AsyncClient() as client:
-            response = await client.get(url=url, headers=headers)
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.get(url=url, headers=headers)
+                response.raise_for_status()
 
-        response.raise_for_status()
+        except TimeoutException as e:
+            raise TwitchTimeoutError() from e
+
+        except HTTPStatusError as e:
+
+            if e.response.status_code == 401:
+                raise TwitchTokenExpired() from e
+
+            if e.response.status_code == 429:
+                raise TwitchRateLimitExceeded() from e
+
+            raise TwitchApiException() from e
+
+        except RequestError as e:
+            raise TwitchConnectionError() from e
 
         response_data = response.json()
         user_data = response_data["data"][0]
