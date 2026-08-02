@@ -1,6 +1,4 @@
-import os
-
-from fastapi import APIRouter, Depends, Request, HTTPException, Response
+from fastapi import APIRouter, Depends, Request
 
 from common.env.settings import settings
 from common.security.encryption import EncryptionService
@@ -16,7 +14,6 @@ from common.dependencies.get_refresh_token import get_refresh_token
 
 from .services.auth_service import AuthService
 from .controller import AuthController
-from .exceptions.exceptions import OAuthException
 
 encryption_service = EncryptionService(key=settings.encryption_key)
 date_delay_generator = DateDelayGenerator()
@@ -55,40 +52,25 @@ async def login(request: Request):
 
 @auth_router.get("/callback")
 async def callback(request: Request):
-    try:
-        return await auth_controller.callback(request)
-    except OAuthException:
-        raise HTTPException(status_code=401, detail="OAuth failed")
+    return await auth_controller.callback(request)
 
 
 @auth_router.get("/refresh")
 async def refresh(refresh_token=Depends(get_refresh_token)):
-    try:
-        return await auth_controller.refresh(refresh_token)
-    except OAuthException:
-        raise HTTPException(status_code=401, detail="OAuth failed")
+    return await auth_controller.refresh(refresh_token)
 
 
 @auth_router.get("/me")
 async def me(current_user=Depends(get_current_user)):
-    try:
-        user_id = current_user.get("user_id")
-        return await auth_controller.me(user_id)
-    except OAuthException:
-        raise HTTPException(status_code=401, detail="OAuth failed")
+    user_id = current_user.get("user_id")
+    return await auth_controller.me(user_id)
 
 
 @auth_router.get("/check")
 async def check(current_user=Depends(get_current_user)):
-    try:
-        return {"status": "ok"}
-    except OAuthException:
-        raise HTTPException(status_code=401, detail="OAuth failed")
+    return {"status": "ok"}
 
 
 @auth_router.post("/logout")
 async def logout(refresh_token=Depends(get_refresh_token)):
-    try:
-        return await auth_controller.logout(refresh_token)
-    except OAuthException:
-        raise HTTPException(status_code=401, detail="OAuth failed")
+    return await auth_controller.logout(refresh_token)

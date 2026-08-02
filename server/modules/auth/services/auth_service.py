@@ -6,7 +6,7 @@ from modules.auth.schemas.create_user_dto import CreateUserDTO
 from modules.auth.schemas.create_session_dto import CreateSessionDTO
 from modules.auth.schemas.create_oauth_connection_dto import CreateOAuthConnectionDTO
 from common.security.encryption import EncryptionService
-from modules.auth.exceptions.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
+from modules.auth.exceptions.domain import OAuthException, TwitchAuthenticationError, UserCreationError
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
 from common.db.uow import UnitOfWork
@@ -175,7 +175,7 @@ class AuthService:
             if user:
                 return UserDTO(id=user.id, username=user.username, sub=user.sub)
 
-            create_user_command = CreateUserDTO(
+            create_user_dto = CreateUserDTO(
                 username=username,
                 sub=sub,
                 provider=provider,
@@ -183,7 +183,7 @@ class AuthService:
                 profile_image_url=twitch_user_info.profile_image_url,
             )
 
-            user = await uow.users_repository.create(create_user_command)
+            user = await uow.users_repository.create(create_user_dto)
 
             return UserDTO(id=user.id, username=user.username, sub=user.sub)
 
@@ -195,7 +195,7 @@ class AuthService:
 
         async with UnitOfWork() as uow:
 
-            create_session_command = CreateSessionDTO(
+            create_session_dto = CreateSessionDTO(
                 user_id=user.id,
                 refresh_token_hash=refresh_token_hash,
                 expires_at=refresh_token_expires_at,
@@ -203,7 +203,7 @@ class AuthService:
                 user_agent=user_agent,
             )
 
-            session = await uow.sessions_repository.create(create_session_command)
+            session = await uow.sessions_repository.create(create_session_dto)
 
             session_dto = SessionDTO(
                 id=session.id,
@@ -264,14 +264,14 @@ class AuthService:
         access_token_expires_at: datetime,
     ):
         async with UnitOfWork() as uow:
-            create_oauth_connection_command = CreateOAuthConnectionDTO(
+            create_oauth_connection_dto = CreateOAuthConnectionDTO(
                 user_id=user_id,
                 access_token_encrypted=access_token_encrypted,
                 refresh_token_encrypted=refresh_token_encrypted,
                 access_token_expires_at=access_token_expires_at,
             )
 
-            await uow.oauth_connections_repository.create(create_oauth_connection_command)
+            await uow.oauth_connections_repository.create(create_oauth_connection_dto)
 
     # RESPONSE BUILDERS
 

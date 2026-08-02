@@ -1,7 +1,7 @@
 from fastapi import Request
 
 from common.auth.auth_engine import oauth
-from modules.auth.exceptions.exceptions import TwitchAuthenticationError
+from modules.auth.exceptions.domain import TwitchAuthenticationError
 
 
 class TwitchAuthClient:

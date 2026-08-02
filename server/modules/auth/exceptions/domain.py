@@ -1,3 +1,6 @@
+from common.exceptions.base import AppException
+
+
 class OAuthException(Exception):
     """Error genérico de OAuth (Twitch, Google, etc.)"""
 
@@ -26,6 +29,9 @@ class OAuthConnectionCreationError(Exception):
     pass
 
 
-class OAuthConnectionNotFound(Exception):
-    def __init__(self, user_id: int):
+class OAuthConnectionNotFound(AppException):
+    status_code = 404
+    error_code = "OAUTH_CONNECTION_NOT_FOUND"
+
+    def __init__(self, user_id):
         super().__init__(f"OAuth connection not found for user {user_id}")

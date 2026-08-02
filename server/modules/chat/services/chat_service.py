@@ -4,7 +4,7 @@ from fastapi import WebSocketDisconnect
 
 from common.logging.logger import logger
 from modules.auth.services.auth_service import UnitOfWork
-from modules.chat.domain.exceptions import UserNotFoundInDB
+from modules.chat.exceptions.domain import UserNotFoundInDB
 from modules.chat.services.twitch_token_service import TwitchTokenService
 from modules.chat.services.ws_service import WsService
 from modules.chat.ws.ws_client_room import WsClientConnection
