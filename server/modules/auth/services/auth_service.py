@@ -2,11 +2,13 @@ from fastapi import Request
 from datetime import datetime
 from uuid import UUID
 
+from modules.auth.schemas.create_user_dto import CreateUserDTO
+from modules.auth.schemas.create_session_dto import CreateSessionDTO
+from modules.auth.schemas.create_oauth_connection_dto import CreateOAuthConnectionDTO
 from common.security.encryption import EncryptionService
-from modules.auth.domain.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
+from modules.auth.exceptions.exceptions import OAuthException, TwitchAuthenticationError, UserCreationError
 from modules.auth.infrastructure.twitch_auth_client import TwitchAuthClient
 from modules.auth.infrastructure.twitch_api_client import TwitchApiClient
-from modules.auth.domain.commands import CreateOAuthConnectionCommand, CreateSessionCommand, CreateUserCommand
 from common.db.uow import UnitOfWork
 from common.tokens.refresh_token_handler import RefreshTokenHandler
 from common.dates.date_delay_generator import DateDelayGenerator
@@ -173,7 +175,7 @@ class AuthService:
             if user:
                 return UserDTO(id=user.id, username=user.username, sub=user.sub)
 
-            create_user_command = CreateUserCommand(
+            create_user_command = CreateUserDTO(
                 username=username,
                 sub=sub,
                 provider=provider,
@@ -193,7 +195,7 @@ class AuthService:
 
         async with UnitOfWork() as uow:
 
-            create_session_command = CreateSessionCommand(
+            create_session_command = CreateSessionDTO(
                 user_id=user.id,
                 refresh_token_hash=refresh_token_hash,
                 expires_at=refresh_token_expires_at,
@@ -262,7 +264,7 @@ class AuthService:
         access_token_expires_at: datetime,
     ):
         async with UnitOfWork() as uow:
-            create_oauth_connection_command = CreateOAuthConnectionCommand(
+            create_oauth_connection_command = CreateOAuthConnectionDTO(
                 user_id=user_id,
                 access_token_encrypted=access_token_encrypted,
                 refresh_token_encrypted=refresh_token_encrypted,

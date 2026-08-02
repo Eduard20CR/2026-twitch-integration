@@ -1,15 +1,15 @@
 from sqlmodel import Session, select
 
 from common.db.models.oauth_connections_model import OAuthConnection
-from modules.auth.domain.commands import CreateOAuthConnectionCommand, UpdateOAuthConnectionCommand
-from modules.auth.domain.exceptions import OAuthConnectionCreationError, OAuthConnectionNotFound
+from modules.auth.exceptions.exceptions import OAuthConnectionCreationError, OAuthConnectionNotFound
+from modules.auth.schemas.create_oauth_connection_dto import CreateOAuthConnectionDTO
 
 
 class OauthConnectionsRepository:
     def __init__(self, db_session: Session):
         self.db_session = db_session
 
-    async def create(self, createOAuthConnectionCommand: CreateOAuthConnectionCommand):
+    async def create(self, createOAuthConnectionCommand: CreateOAuthConnectionDTO):
         try:
             oauth_connection = OAuthConnection(
                 access_token_encrypted=createOAuthConnectionCommand.access_token_encrypted,
@@ -43,7 +43,7 @@ class OauthConnectionsRepository:
 
         return connection
 
-    async def update(self, update_oauth_connection_command: UpdateOAuthConnectionCommand):
+    async def update(self, update_oauth_connection_command: CreateOAuthConnectionDTO):
         statement = (
             select(OAuthConnection)
             .where(OAuthConnection.user_id == update_oauth_connection_command.user_id)

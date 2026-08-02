@@ -1,6 +1,6 @@
 import httpx
 
-from modules.auth.domain.exceptions import TwitchAuthenticationError
+from modules.auth.exceptions.exceptions import TwitchAuthenticationError
 from modules.chat.schemas.updated_tokens_dto import UpdatedTokensDTO
 
 

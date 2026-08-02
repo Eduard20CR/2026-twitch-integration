@@ -1,8 +1,8 @@
 from sqlmodel import Session, select
 from uuid import UUID
-from modules.auth.domain.commands import CreateSessionCommand
-from modules.auth.domain.exceptions import SessionCreationError
+from modules.auth.exceptions.exceptions import SessionCreationError
 from common.db.models.user_sessions_model import UserSession
+from modules.auth.schemas.create_session_dto import CreateSessionDTO
 
 
 class SessionsRepository:
@@ -25,7 +25,7 @@ class SessionsRepository:
         result = await self.db_session.exec(statement)
         return result.first()
 
-    async def create(self, create_session_command: CreateSessionCommand):
+    async def create(self, create_session_command: CreateSessionDTO):
         try:
             session = UserSession(
                 user_id=create_session_command.user_id,

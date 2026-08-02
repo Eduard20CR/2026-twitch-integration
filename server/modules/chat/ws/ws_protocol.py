@@ -1,5 +1,5 @@
-from modules.chat.domain.ws_message import WsMessage
-from modules.chat.domain.ws_events import WsEvents
+from modules.chat.ws.ws_message import WsMessage
+from modules.chat.ws.ws_events import WsEvents
 
 
 class WsProtocol:

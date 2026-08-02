@@ -16,7 +16,7 @@ from common.dependencies.get_refresh_token import get_refresh_token
 
 from .services.auth_service import AuthService
 from .controller import AuthController
-from .domain.exceptions import OAuthException
+from .exceptions.exceptions import OAuthException
 
 encryption_service = EncryptionService(key=settings.encryption_key)
 date_delay_generator = DateDelayGenerator()
